@@ -1,14 +1,15 @@
 [![CI badge](https://github.com/micropython/micropython/workflows/unix%20port/badge.svg)](https://github.com/micropython/micropython/actions?query=branch%3Amaster+event%3Apush) [![Coverage badge](https://coveralls.io/repos/micropython/micropython/badge.png?branch=master)](https://coveralls.io/r/micropython/micropython?branch=master)
 
-The MicroPython project
-=======================
+The MicroPython project (ZL4YY's fork)
+======================================
 <p align="center">
   <img src="https://raw.githubusercontent.com/micropython/micropython/master/logo/upython-with-micro.jpg" alt="MicroPython Logo"/>
 </p>
 
-This is the MicroPython project, which aims to put an implementation
-of Python 3.x on microcontrollers and small embedded systems.
-You can find the official website at [micropython.org](http://www.micropython.org).
+This is a fork of the MicroPython project to work on a port to the
+Texas Instruments LM4F120 microcontroller (Stellaris Launchpad).
+Micropython aims to put an implementation of Python 3.x on microcontrollers and small
+embedded systems. You can find the official website at [micropython.org](http://www.micropython.org).
 
 WARNING: this project is in beta stage and is subject to changes of the
 code-base, including project-wide name changes and API changes.
@@ -34,6 +35,8 @@ Major components in this repository:
   core library.
 - mpy-cross/ -- the MicroPython cross-compiler which is used to turn scripts
   into precompiled bytecode.
+- ports/lm4f -- a version intending to have a relatively complete feature set
+- ports/lm4f-minimal -- a version including minimal functionality (UART, REPL and LEDs)
 - ports/unix/ -- a version of MicroPython that runs on Unix.
 - ports/stm32/ -- a version of MicroPython that runs on the PyBoard and similar
   STM32 boards (using ST's Cube HAL drivers).
@@ -149,6 +152,11 @@ and so enabled by default), `MICROPY_PY_USSL` should be set to 1.
 For some ports, building required dependences is transparent, and happens
 automatically.  But they still need to be fetched with the `make submodules`
 command.
+
+The LM4F version
+-----------------
+
+Work in progress.
 
 The STM32 version
 -----------------
