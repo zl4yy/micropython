@@ -11,6 +11,9 @@ Texas Instruments LM4F120 microcontroller (Stellaris Launchpad).
 Micropython aims to put an implementation of Python 3.x on microcontrollers and small
 embedded systems. You can find the official website at [micropython.org](http://www.micropython.org).
 
+This port gas been developed on the LM4F120 microcontroller but should work
+on other similar microcontrollers from the Tiva C range (e.g. TM4C123).
+
 WARNING: this project is in beta stage and is subject to changes of the
 code-base, including project-wide name changes and API changes.
 
@@ -35,18 +38,18 @@ Major components in this repository:
   core library.
 - mpy-cross/ -- the MicroPython cross-compiler which is used to turn scripts
   into precompiled bytecode.
-- ports/lm4f -- a version intending to have a relatively complete feature set
-- ports/lm4f-minimal -- a version including minimal functionality (UART, REPL and LEDs)
-- ports/unix/ -- a version of MicroPython that runs on Unix.
-- ports/stm32/ -- a version of MicroPython that runs on the PyBoard and similar
-  STM32 boards (using ST's Cube HAL drivers).
-- ports/minimal/ -- a minimal MicroPython port. Start with this if you want
-  to port MicroPython to another microcontroller.
+- ports/tiva_c -- a version intending to have a relatively complete feature set
+- ports/tiva_c-minimal -- a version including minimal functionality (UART, REPL and LEDs)
 - tests/ -- test framework and test scripts.
 - docs/ -- user documentation in Sphinx reStructuredText format. Rendered
   HTML documentation is available at http://docs.micropython.org.
 
 Additional components:
+- ports/unix/ -- a version of MicroPython that runs on Unix.
+- ports/stm32/ -- a version of MicroPython that runs on the PyBoard and similar
+  STM32 boards (using ST's Cube HAL drivers).
+- ports/minimal/ -- a minimal MicroPython port. Start with this if you want
+  to port MicroPython to another microcontroller.
 - ports/bare-arm/ -- a bare minimum version of MicroPython for ARM MCUs. Used
   mostly to control code size.
 - ports/teensy/ -- a version of MicroPython that runs on the Teensy 3.1
@@ -77,6 +80,47 @@ a port.  To build mpy-cross use:
 
     $ cd mpy-cross
     $ make
+
+
+The LM4F120 version
+-------------------
+
+There is a functional minimal port to the Texas Instruments Stellaris LaunchPad.
+UART and basic GPIO control are implemented.
+
+A more complete port inspired by this port is a work in progress:
+	https://github.com/rk-exxec/micropython/tree/tiva_from_stable
+
+More details available in the ports/tiva_c-minimal and ports/tiva_c directories.
+
+
+The STM32 version
+-----------------
+
+The "stm32" port requires an ARM compiler, arm-none-eabi-gcc, and associated
+bin-utils.  For those using Arch Linux, you need arm-none-eabi-binutils,
+arm-none-eabi-gcc and arm-none-eabi-newlib packages.  Otherwise, try here:
+https://launchpad.net/gcc-arm-embedded
+
+To build:
+
+    $ cd ports/stm32
+    $ make submodules
+    $ make
+
+You then need to get your board into DFU mode.  On the pyboard, connect the
+3V3 pin to the P1/DFU pin with a wire (on PYBv1.0 they are next to each other
+on the bottom left of the board, second row from the bottom).
+
+Then to flash the code via USB DFU to your device:
+
+    $ make deploy
+
+This will use the included `tools/pydfu.py` script.  If flashing the firmware
+does not work it may be because you don't have the correct permissions, and
+need to use `sudo make deploy`.
+See the README.md file in the ports/stm32/ directory for further details.
+
 
 The Unix version
 ----------------
@@ -152,38 +196,6 @@ and so enabled by default), `MICROPY_PY_USSL` should be set to 1.
 For some ports, building required dependences is transparent, and happens
 automatically.  But they still need to be fetched with the `make submodules`
 command.
-
-The LM4F version
------------------
-
-Work in progress.
-
-The STM32 version
------------------
-
-The "stm32" port requires an ARM compiler, arm-none-eabi-gcc, and associated
-bin-utils.  For those using Arch Linux, you need arm-none-eabi-binutils,
-arm-none-eabi-gcc and arm-none-eabi-newlib packages.  Otherwise, try here:
-https://launchpad.net/gcc-arm-embedded
-
-To build:
-
-    $ cd ports/stm32
-    $ make submodules
-    $ make
-
-You then need to get your board into DFU mode.  On the pyboard, connect the
-3V3 pin to the P1/DFU pin with a wire (on PYBv1.0 they are next to each other
-on the bottom left of the board, second row from the bottom).
-
-Then to flash the code via USB DFU to your device:
-
-    $ make deploy
-
-This will use the included `tools/pydfu.py` script.  If flashing the firmware
-does not work it may be because you don't have the correct permissions, and
-need to use `sudo make deploy`.
-See the README.md file in the ports/stm32/ directory for further details.
 
 Contributing
 ------------

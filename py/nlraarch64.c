@@ -33,19 +33,25 @@
 
 // Implemented purely as inline assembly; inside a function, we have to deal with undoing the prologue, restoring
 // SP and LR. This way, we don't.
-__asm(
-    "nlr_push:               \n"
-    ".global nlr_push        \n"
-    "mov x9, sp              \n"
-    "stp lr,  x9,  [x0,  #16]\n" // 16 == offsetof(nlr_buf_t, regs)
-    "stp x19, x20, [x0,  #32]\n"
-    "stp x21, x22, [x0,  #48]\n"
-    "stp x23, x24, [x0,  #64]\n"
-    "stp x25, x26, [x0,  #80]\n"
-    "stp x27, x28, [x0,  #96]\n"
-    "str x29,      [x0, #112]\n"
-    "b nlr_push_tail         \n" // do the rest in C
-    );
+
+unsigned int nlr_push(nlr_buf_t *nlr) {
+    (void)nlr;
+
+    __asm volatile (
+		"mov x9, sp              \n"
+		"stp lr,  x9,  [x0,  #16]\n" // 16 == offsetof(nlr_buf_t, regs)
+		"stp x19, x20, [x0,  #32]\n"
+		"stp x21, x22, [x0,  #48]\n"
+		"stp x23, x24, [x0,  #64]\n"
+		"stp x25, x26, [x0,  #80]\n"
+		"stp x27, x28, [x0,  #96]\n"
+		"str x29,      [x0, #112]\n"
+		"b _nlr_push_tail         \n"
+		);
+
+
+    return 0; // needed to silence compiler warning
+}
 
 NORETURN void nlr_jump(void *val) {
     MP_NLR_JUMP_HEAD(val, top)
