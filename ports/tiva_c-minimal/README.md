@@ -21,8 +21,16 @@ This is a minimalist port and only provides:
 - REPL interface to MicroPython
 - UART0 at 115kbps (via USB debug port)
 - Onboard GPIO control to use LEDs and Switches
+- Time and delay using SysTick
 
 Full GPIO control, SPI, I2C, DMA or hardware FPU are not supported.
+
+## Time and delay
+Example usage:
+	import time
+	time.init()
+	gpio.delay_ms(1000)
+	gpio.delay_us(100)
 
 
 ## Onboard LED control
@@ -38,7 +46,6 @@ Example usage:
 
 
 The values for the pin can be 0/1/2/3/4 or gpio.red/blue/green/sw1/sw2 or gpio.pf0/pf1/pf2/pf3/pf4
-
 
 ## Running the Frozen bytecode to test GPIO
 An example of frozen bytecode is provided in gpiotest.py to demonstrate GPIO usage. It

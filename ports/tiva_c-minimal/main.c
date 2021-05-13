@@ -49,6 +49,12 @@ static char *stack_top;
 static char heap[4096];
 #endif
 
+#if MICROPY_MIN_USE_LM4F_MCU
+// Prototype
+void lm4f_reset(void);
+#endif
+
+
 int main(int argc, char **argv) {
     int stack_dummy;
     stack_top = (char *)&stack_dummy;
@@ -73,6 +79,10 @@ int main(int argc, char **argv) {
     pyexec_frozen_module("gpiotest.py");
     #endif
     mp_deinit();
+    // Reset Board
+    #if MICROPY_MIN_USE_LM4F_MCU
+    lm4f_reset();
+    #endif
     return 0;
 }
 
@@ -340,6 +350,8 @@ void __error__(char *pcFilename, uint32_t ui32Line) { }
 #define UART_LCRH_FEN           0x00000010  // UART Enable FIFOs
 #define UART_CTL_UARTEN         0x00000001  // UART Enable
 #define ROM_SysCtlClockSet      ((void (*)(unsigned long ulConfig))ROM_SYSCTLTABLE[23])
+#define ROM_SysCtlReset         ((void (*)(void))ROM_SYSCTLTABLE[19])
+
 
 void UART_Init0(void){
   SYSCTL_RCGCUART_R |= 0x01;            // activate UART0
@@ -359,6 +371,13 @@ void UART_Init0(void){
   GPIO_PORTA_PCTL_R = (GPIO_PORTA_PCTL_R&0xFFFFFF00)+0x00000011;
   GPIO_PORTA_AMSEL_R &= ~0x03;          // disable analog functionality on PA
 }
+
+// Function called when REPL ends
+void lm4f_reset(void) {
+    // Reset MCU
+    ROM_SysCtlReset();
+}
+
 
 //*****************************************************************************
 //

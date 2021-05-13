@@ -45,6 +45,7 @@
 
 // Port specific modules
 #define MICROPY_MODULE_GPIO      (1)
+#define MICROPY_MODULE_TIME      (1)
 
 
 // type definitions for the specific machine

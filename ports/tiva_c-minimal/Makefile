@@ -54,12 +54,14 @@ SRC_C = \
 	lib/mp-readline/readline.c \
 	$(BUILD)/_frozen_mpy.c \
 	modules/gpio.c \
+	modules/time.c \
 
 ifeq ($(CROSS), 1)
 SRC_C += lib/libc/string0.c
 endif
 
 SRC_QSTR += modules/gpio.c
+SRC_QSTR += modules/time.c 
 
 OBJ = $(PY_CORE_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
