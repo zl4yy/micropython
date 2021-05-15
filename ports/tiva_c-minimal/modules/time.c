@@ -10,7 +10,6 @@
 
 */
 #include <stdbool.h>
-#include <math.h>
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
@@ -93,9 +92,15 @@ void Do_SysTick_Waitus(uint32_t delay) {
 	}
 }
 
-// Return the current tick
-void Do_SysTick_Ticksms() {
-	
+// Return the current tick value in ms
+uint32_t Do_SysTick_Ticksms() {
+	return (ROM_SysTickValueGet()/80000);
+}
+
+// Return the diff in ticks in ms
+int32_t Do_SysTick_TicksDiff(uint32_t tick_a, uint32_t tick_b) {
+    uint32_t period = ROM_SysTickPeriodGet()/80000;
+    return ((int32_t)(((tick_b - tick_a + period / 2) & (period - 1)) - period / 2));
 }
 
 
@@ -150,15 +155,13 @@ STATIC mp_obj_t time_sleep_us(mp_obj_t delay_obj) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(time_sleep_us_obj, time_sleep_us);
 
-// Return current Systick (WIP).
+// Return current Systick in ms.
 STATIC mp_obj_t time_ticks_ms(void) {
     uint32_t value = 0;
     if (SysTick_InitDone == false) {
 	    mp_printf(&mp_plat_print, "Time not initialised.\n");
     } else {
-        value = ROM_SysTickValueGet();
-// This part of the code does not work
-//        value = (uint32_t)floor(value/80000);
+        value = Do_SysTick_Ticksms();
     }
 
     return mp_obj_new_int(value);
@@ -169,8 +172,13 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(time_ticks_ms_obj, time_ticks_ms);
 STATIC mp_obj_t time_ticks_diff(mp_obj_t tick_a_obj, mp_obj_t tick_b_obj) {
     uint32_t tick_a = mp_obj_get_int(tick_a_obj);
     uint32_t tick_b = mp_obj_get_int(tick_b_obj);
-    uint32_t period = ROM_SysTickPeriodGet();
-    int32_t value = ((int32_t)(((tick_b - tick_a + period / 2) & (period - 1)) - period / 2));
+
+    uint32_t value = 0;
+    if (SysTick_InitDone == false) {
+	    mp_printf(&mp_plat_print, "Time not initialised.\n");
+    } else {
+        value = Do_SysTick_TicksDiff(tick_a,tick_b);
+    }
 
     return mp_obj_new_int(value);
 }
