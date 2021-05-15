@@ -344,15 +344,6 @@ void __error__(char *pcFilename, uint32_t ui32Line) { }
 // Input: none
 // Output: none
 
-#define UART_FR_TXFF            0x00000020  // UART Transmit FIFO Full
-#define UART_FR_RXFE            0x00000010  // UART Receive FIFO Empty
-#define UART_LCRH_WLEN_8        0x00000060  // 8 bit word length
-#define UART_LCRH_FEN           0x00000010  // UART Enable FIFOs
-#define UART_CTL_UARTEN         0x00000001  // UART Enable
-#define ROM_SysCtlClockSet      ((void (*)(unsigned long ulConfig))ROM_SYSCTLTABLE[23])
-#define ROM_SysCtlReset         ((void (*)(void))ROM_SYSCTLTABLE[19])
-
-
 void UART_Init0(void){
   SYSCTL_RCGCUART_R |= 0x01;            // activate UART0
   SYSCTL_RCGCGPIO_R |= 0x01;            // activate port A

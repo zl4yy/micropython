@@ -10,6 +10,7 @@
 	Software provided under MIT License
 
 */
+#include <stdbool.h>
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
@@ -17,24 +18,29 @@
 #include "boards/lm4f_sysctl.h"
 #include "boards/lm4f_registers.h"
 
+bool GPIO_InitDone = false;
+
 #define PF0 0
 #define PF1 1
 #define PF2 2
 #define PF3 3
 #define PF4 4
 
-STATIC mp_obj_t gpio_info(void) {
-	// Display basic help
-    mp_printf(&mp_plat_print, "Basic GPIO Functions to control LEDs. Functions are:\n gpio.init() gpio.output(<pin>) gpio.input(<pin>) gpio.up(<pin>) gpio.down(<pin>) gpio.read(<pin>)\n <pin> can be 0 1 2 3 4 or gpio.pf0/1/2/3/4 or gpio.red/blue/green/sw1/sw2\n");
-    return mp_const_none;
+
+/*
+
+    Internal C functions (For use in other C modules)   
+
+*/
+
+// Enable the GPIO port that is used for the on-board LEDs and Switches.
+void Do_GPIO_Init() {
+    SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOF;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(gpio_info_obj, gpio_info);
 
-STATIC mp_obj_t gpio_output(mp_obj_t pin_obj) {
-    // Enable the GPIO pins for the LEDs.  Set the direction as output, and
-    // enable the GPIO pin for digital function.
-    int pin = mp_obj_get_int(pin_obj);
-
+// Enable the GPIO pins for the LEDs.  Set the direction as output, and
+// enable the GPIO pin for digital function.
+void Do_GPIO_output(int pin) {
 	switch (pin) {
 	case 1:
 		GPIO_PORTF_DIR_R |= 0x02;
@@ -55,15 +61,11 @@ STATIC mp_obj_t gpio_output(mp_obj_t pin_obj) {
 	    mp_printf(&mp_plat_print, "Pin unavailable for this function.\n");
 		break;
     }
-    return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(gpio_output_obj, gpio_output);
 
-STATIC mp_obj_t gpio_input(mp_obj_t pin_obj) {
-    // Enable the GPIO pins for the Switches.  Set the direction as input, and
-    // enable the GPIO pin for digital function.
-    int pin = mp_obj_get_int(pin_obj);
-
+// Enable the GPIO pins for the Switches.  Set the direction as input, and
+// enable the GPIO pin for digital function.
+void Do_GPIO_input(int pin) {
 	switch (pin) {
 	case 0:
 		// SW2 is connected to PORTF0, which is an NMI pin.
@@ -85,14 +87,10 @@ STATIC mp_obj_t gpio_input(mp_obj_t pin_obj) {
 	    mp_printf(&mp_plat_print, "Pin unavailable for this function.\n");
 		break;
     }
-    return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(gpio_input_obj, gpio_input);
 
-
-STATIC mp_obj_t gpio_up(mp_obj_t pin_obj) {
-    int pin = mp_obj_get_int(pin_obj);
-
+// Set pin value to High
+void Do_GPIO_up(int pin) {
 	switch (pin) {
 	case 1:
 		GPIO_PORTF_DATA_R |= 0x02;	// Set pin 1 (bit 1) to 1
@@ -107,13 +105,10 @@ STATIC mp_obj_t gpio_up(mp_obj_t pin_obj) {
 	    mp_printf(&mp_plat_print, "Pin unavailable for this function.\n");
 		break;
     }
-    return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(gpio_up_obj, gpio_up);
 
-STATIC mp_obj_t gpio_down(mp_obj_t pin_obj) {
-    int pin = mp_obj_get_int(pin_obj);
-
+// Set pin value to Low
+void Do_GPIO_down(int pin) {
 	switch (pin) {
 	case 1:
 		GPIO_PORTF_DATA_R &= ~0x02; // Set pin 1 (bit 1) to 0
@@ -128,43 +123,106 @@ STATIC mp_obj_t gpio_down(mp_obj_t pin_obj) {
 	    mp_printf(&mp_plat_print, "Pin unavailable for this function.\n");
 		break;
     }
-    return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(gpio_down_obj, gpio_down);
 
-STATIC mp_obj_t gpio_read(mp_obj_t pin_obj) {
-	// Reading a value from the GPIO port
-    int pin = mp_obj_get_int(pin_obj);
-    int value = -1;
-
+// Read value from input pin
+int Do_GPIO_read(int pin) {
+	int value = -1;
 	switch (pin) {
 	case 0:
-	    value = GPIO_PORTF_DATA_R & 0x1;  // read data from PORTF pin 0
+		value = GPIO_PORTF_DATA_R & 0x1;  // read data from PORTF pin 0
 		break;
 	case 4:
-	    value = (GPIO_PORTF_DATA_R & 0x10) >> 4;  // read data from PORTF pin 4
+		value = (GPIO_PORTF_DATA_R & 0x10) >> 4;  // read data from PORTF pin 4
 		break;
 	default:
-	    mp_printf(&mp_plat_print, "Pin unavailable for this function.\n");
+		mp_printf(&mp_plat_print, "Pin unavailable for this function.\n");
 		break;
-    }
-    
-    return mp_obj_new_int(value);
+	}
+	return value;
 }
+/*
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(gpio_read_obj, gpio_read);
+    MicroPython Wrappers
 
+*/
 
+// Display basic help
+STATIC mp_obj_t gpio_info(void) {
+    mp_printf(&mp_plat_print, "Basic GPIO Functions to control LEDs. Functions are:\n gpio.init() gpio.output(<pin>) gpio.input(<pin>) gpio.up(<pin>) gpio.down(<pin>) gpio.read(<pin>)\n <pin> can be 0 1 2 3 4 or gpio.pf0/1/2/3/4 or gpio.red/blue/green/sw1/sw2\n");
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(gpio_info_obj, gpio_info);
+
+// Initialise GPIO pins
 STATIC mp_obj_t gpio_init(void) {
-    //
-    // Enable the GPIO port that is used for the on-board LEDs and Switches.
-    //
-    SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOF;
-
+	Do_GPIO_Init();
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(gpio_init_obj, gpio_init);
 
+// Set pin as output
+STATIC mp_obj_t gpio_output(mp_obj_t pin_obj) {
+    int pin = mp_obj_get_int(pin_obj);
+    if (GPIO_InitDone == false) {
+	    mp_printf(&mp_plat_print, "GPIO not initialised.\n");
+	} else{
+		Do_GPIO_output(pin);
+	}
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(gpio_output_obj, gpio_output);
+
+// Set pin as input
+STATIC mp_obj_t gpio_input(mp_obj_t pin_obj) {
+    int pin = mp_obj_get_int(pin_obj);
+    if (GPIO_InitDone == false) {
+	    mp_printf(&mp_plat_print, "GPIO not initialised.\n");
+	} else{
+		Do_GPIO_input(pin);
+	}
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(gpio_input_obj, gpio_input);
+
+// Set output pin value to High
+STATIC mp_obj_t gpio_up(mp_obj_t pin_obj) {
+    int pin = mp_obj_get_int(pin_obj);
+    if (GPIO_InitDone == false) {
+	    mp_printf(&mp_plat_print, "GPIO not initialised.\n");
+	} else{
+		Do_GPIO_up(pin);
+	}
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(gpio_up_obj, gpio_up);
+
+// Set output pin value to Low
+STATIC mp_obj_t gpio_down(mp_obj_t pin_obj) {
+    int pin = mp_obj_get_int(pin_obj);
+    if (GPIO_InitDone == false) {
+	    mp_printf(&mp_plat_print, "GPIO not initialised.\n");
+	} else{
+		Do_GPIO_down(pin);
+	}
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(gpio_down_obj, gpio_down);
+
+// Reading a value from the GPIO port
+STATIC mp_obj_t gpio_read(mp_obj_t pin_obj) {
+    int pin = mp_obj_get_int(pin_obj);
+    int value = -1;
+
+    if (GPIO_InitDone == false) {
+	    mp_printf(&mp_plat_print, "GPIO not initialised.\n");
+    } else {
+		value = Do_GPIO_read(pin);
+	}    
+    return mp_obj_new_int(value);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(gpio_read_obj, gpio_read);
 
 // This section does the mapping between C functions and MicroPython in the module
 STATIC const mp_rom_map_elem_t gpio_module_globals_table[] = {

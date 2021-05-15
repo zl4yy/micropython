@@ -24,8 +24,10 @@ INC += -I$(BUILD)
 ifeq ($(CROSS), 1)
 DFU = $(TOP)/tools/dfu.py
 PYDFU = $(TOP)/tools/pydfu.py
+MCUTARGET = -DTARGET_IS_TM4C123_RA1 #Forcing target for lm4f_rom.h
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -msoft-float -fsingle-precision-constant -Wdouble-promotion -Wfloat-conversion
-CFLAGS = $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
+CFLAGS = $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) $(MCUTARGET)
+
 #LDFLAGS = -nostdlib -T boards/stm32f405.ld -Map=$@.map --cref --gc-sections
 LDFLAGS = -nostdlib -T boards/lm4f120xl.ld -Map=$@.map --cref --gc-sections
 else

@@ -14,6 +14,21 @@ embedded systems. You can find the official website at [micropython.org](http://
 This port gas been developed on the LM4F120 microcontroller but should work
 on other similar microcontrollers from the Tiva C range (e.g. TM4C123).
 
+Objectives of this fork
+-----------------------
+This repo and fork has been setup mainly as a sandpit for me to play with the MicroPython
+code on a Stellaris LaunchPad board. If you are looking for other platforms or more
+general MicroPython code, please go to the origin repo.
+
+General principles underpinning my work:
+- This is more about the LM4F120 / TM4C123 (Tiva C) microcontrollers than MicroPython
+- Code to control with the MCU or Hardware modules will preferably be written in C
+- MicroPython's REPL is mainly seen as a front-end to the MCU
+- I miss the days of the simple home computers with BASIC interpreters, and this was a
+way to recreate a substitute retro-computer.
+
+MicroPython's general intro
+---------------------------
 WARNING: this project is in beta stage and is subject to changes of the
 code-base, including project-wide name changes and API changes.
 
@@ -44,26 +59,8 @@ Major components in this repository:
 - docs/ -- user documentation in Sphinx reStructuredText format. Rendered
   HTML documentation is available at http://docs.micropython.org.
 
-Additional components:
-- ports/unix/ -- a version of MicroPython that runs on Unix.
-- ports/stm32/ -- a version of MicroPython that runs on the PyBoard and similar
-  STM32 boards (using ST's Cube HAL drivers).
-- ports/minimal/ -- a minimal MicroPython port. Start with this if you want
-  to port MicroPython to another microcontroller.
-- ports/bare-arm/ -- a bare minimum version of MicroPython for ARM MCUs. Used
-  mostly to control code size.
-- ports/teensy/ -- a version of MicroPython that runs on the Teensy 3.1
-  (preliminary but functional).
-- ports/pic16bit/ -- a version of MicroPython for 16-bit PIC microcontrollers.
-- ports/cc3200/ -- a version of MicroPython that runs on the CC3200 from TI.
-- ports/esp8266/ -- a version of MicroPython that runs on Espressif's ESP8266 SoC.
-- ports/esp32/ -- a version of MicroPython that runs on Espressif's ESP32 SoC.
-- ports/nrf/ -- a version of MicroPython that runs on Nordic's nRF51 and nRF52 MCUs.
-- extmod/ -- additional (non-core) modules implemented in C.
-- tools/ -- various tools, including the pyboard.py module.
-- examples/ -- a few example Python scripts.
-
-The subdirectories above may include READMEs with additional info.
+The subdirectories above may include READMEs with additional info. For more details
+about the other components and sub-directories, go to the main repo.
 
 "make" is used to build the components, or "gmake" on BSD-based systems.
 You will also need bash, gcc, and Python 3.3+ available as the command `python3`
@@ -88,114 +85,30 @@ The LM4F120 version
 There is a functional minimal port to the Texas Instruments Stellaris LaunchPad.
 UART and basic GPIO control are implemented.
 
-A more complete port inspired by this port is a work in progress:
-	https://github.com/rk-exxec/micropython/tree/tiva_from_stable
-
 More details available in the ports/tiva_c-minimal and ports/tiva_c directories.
 
+Once the compiler toolchain is installed, to build:
 
-The STM32 version
------------------
-
-The "stm32" port requires an ARM compiler, arm-none-eabi-gcc, and associated
-bin-utils.  For those using Arch Linux, you need arm-none-eabi-binutils,
-arm-none-eabi-gcc and arm-none-eabi-newlib packages.  Otherwise, try here:
-https://launchpad.net/gcc-arm-embedded
-
-To build:
-
-    $ cd ports/stm32
-    $ make submodules
+    $ cd ports/tiva_c-minimal
     $ make
 
-You then need to get your board into DFU mode.  On the pyboard, connect the
-3V3 pin to the P1/DFU pin with a wire (on PYBv1.0 they are next to each other
-on the bottom left of the board, second row from the bottom).
+To Flash it to the Launchpad:
+	
+	$ FlashTiva build/firmware.elf
 
-Then to flash the code via USB DFU to your device:
+Connect to the UART0 via the USB debug port. Example on MacOS (device address may vary):
 
-    $ make deploy
-
-This will use the included `tools/pydfu.py` script.  If flashing the firmware
-does not work it may be because you don't have the correct permissions, and
-need to use `sudo make deploy`.
-See the README.md file in the ports/stm32/ directory for further details.
-
-
-The Unix version
-----------------
-
-The "unix" port requires a standard Unix environment with gcc and GNU make.
-x86 and x64 architectures are supported (i.e. x86 32- and 64-bit), as well
-as ARM and MIPS. Making full-featured port to another architecture requires
-writing some assembly code for the exception handling and garbage collection.
-Alternatively, fallback implementation based on setjmp/longjmp can be used.
-
-To build (see section below for required dependencies):
-
-    $ cd ports/unix
-    $ make submodules
-    $ make
+	$screen /dev/cu.usbmodem0E104ED61
 
 Then to give it a try:
 
     $ ./micropython
     >>> list(5 * x + y for x in range(10) for y in [4, 2, 1])
 
-Use `CTRL-D` (i.e. EOF) to exit the shell.
-Learn about command-line options (in particular, how to increase heap size
-which may be needed for larger applications):
-
-    $ ./micropython -h
-
-Run complete testsuite:
-
-    $ make test
-
-Unix version comes with a builtin package manager called upip, e.g.:
-
-    $ ./micropython -m upip install micropython-pystone
-    $ ./micropython -m pystone
-
 Browse available modules on
 [PyPI](https://pypi.python.org/pypi?%3Aaction=search&term=micropython).
 Standard library modules come from
 [micropython-lib](https://github.com/micropython/micropython-lib) project.
-
-External dependencies
----------------------
-
-Building MicroPython ports may require some dependencies installed.
-
-For Unix port, `libffi` library and `pkg-config` tool are required. On
-Debian/Ubuntu/Mint derivative Linux distros, install `build-essential`
-(includes toolchain and make), `libffi-dev`, and `pkg-config` packages.
-
-Other dependencies can be built together with MicroPython. This may
-be required to enable extra features or capabilities, and in recent
-versions of MicroPython, these may be enabled by default. To build
-these additional dependencies, in the port directory you're
-interested in (e.g. `ports/unix/`) first execute:
-
-    $ make submodules
-
-This will fetch all the relevant git submodules (sub repositories) that
-the port needs.  Use the same command to get the latest versions of
-submodules as they are updated from time to time. After that execute:
-
-    $ make deplibs
-
-This will build all available dependencies (regardless whether they
-are used or not). If you intend to build MicroPython with additional
-options (like cross-compiling), the same set of options should be passed
-to `make deplibs`. To actually enable/disable use of dependencies, edit
-`ports/unix/mpconfigport.mk` file, which has inline descriptions of the options.
-For example, to build SSL module (required for `upip` tool described above,
-and so enabled by default), `MICROPY_PY_USSL` should be set to 1.
-
-For some ports, building required dependences is transparent, and happens
-automatically.  But they still need to be fetched with the `make submodules`
-command.
 
 Contributing
 ------------

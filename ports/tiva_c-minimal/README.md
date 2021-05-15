@@ -29,9 +29,11 @@ Full GPIO control, SPI, I2C, DMA or hardware FPU are not supported.
 Example usage:
 	import time
 	time.init()
-	gpio.delay_ms(1000)
-	gpio.delay_us(100)
-
+	time.sleep(2)
+	time.sleep_ms(1000)
+	time.sleep_us(100)
+	start = time.ticks_ms() # get value of millisecond counter
+	delta = time.ticks_diff(time.ticks_ms(), start) # compute time difference
 
 ## Onboard LED control
 Example usage:
