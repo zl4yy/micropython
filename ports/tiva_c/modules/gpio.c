@@ -6,7 +6,7 @@
 	
 	Yannick Devos - ZL4YY (https://blog.qscope.org)
 	https://github.com/zl4yy/micropython
- 	27 May 2021
+ 	5 June 2021
 	
 	Software provided under MIT License
 
@@ -72,6 +72,9 @@ void Do_GPIO_output(int pin) {
 	case 7:
 		value = 0x80;
 		break;
+	case 9:
+		// 99 is NULL value
+		break;
 	default:
 	    mp_printf(&mp_plat_print, "Pin unavailable.\n");
 		break;
@@ -101,6 +104,9 @@ void Do_GPIO_output(int pin) {
 	case 6:
 		GPIO_PORTF_DIR_R |= value;
 		GPIO_PORTF_DEN_R |= value;
+		break;
+	case 9:
+		// 99 is NULL value
 		break;
 	default:
 	    mp_printf(&mp_plat_print, "Port unavailable.\n");
@@ -139,6 +145,9 @@ void Do_GPIO_input(int pin) {
 		break;
 	case 7:
 		value = 0x80;
+		break;
+	case 9:
+		// 99 is NULL value
 		break;
 	default:
 	    mp_printf(&mp_plat_print, "Pin unavailable.\n");
@@ -191,6 +200,9 @@ void Do_GPIO_input(int pin) {
 		GPIO_PORTF_DEN_R |= value;
 		GPIO_PORTF_PUR_R |= value;         // enable pull up
 		break;
+	case 9:
+		// 99 is NULL value
+		break;
 	default:
 	    mp_printf(&mp_plat_print, "Port unavailable.\n");
 		break;
@@ -226,6 +238,9 @@ void Do_GPIO_up(int pin) {
 	case 7:
 		value = 0x80;
 		break;
+	case 9:
+		// 99 is NULL value
+		break;
 	default:
 	    mp_printf(&mp_plat_print, "Pin unavailable.\n");
 		break;
@@ -249,6 +264,9 @@ void Do_GPIO_up(int pin) {
 		break;
 	case 6:
 		GPIO_PORTF_DATA_R |= value;
+		break;
+	case 9:
+		// 99 is NULL value
 		break;
 	default:
 	    mp_printf(&mp_plat_print, "Port unavailable.\n");
@@ -285,6 +303,9 @@ void Do_GPIO_down(int pin) {
 	case 7:
 		value = 0x80;
 		break;
+	case 9:
+		// 99 is NULL value
+		break;
 	default:
 	    mp_printf(&mp_plat_print, "Pin unavailable.\n");
 		break;
@@ -308,6 +329,9 @@ void Do_GPIO_down(int pin) {
 		break;
 	case 6:
 		GPIO_PORTF_DATA_R &= ~value;
+		break;
+	case 9:
+		// 99 is NULL value
 		break;
 	default:
 	    mp_printf(&mp_plat_print, "Port unavailable.\n");
@@ -353,6 +377,9 @@ int Do_GPIO_read(int pin) {
 	case 7:
 		value = 0x80;
 		break;
+	case 9:
+		// 99 is NULL value
+		break;
 	default:
 	    mp_printf(&mp_plat_print, "Pin unavailable.\n");
 		break;
@@ -377,6 +404,9 @@ int Do_GPIO_read(int pin) {
 		break;
 	case 6:
 		value = GPIO_PORTF_DATA_R & value;
+		break;
+	case 9:
+		// 99 is NULL value
 		break;
 	default:
 	    mp_printf(&mp_plat_print, "Port unavailable.\n");

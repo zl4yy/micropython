@@ -6,13 +6,15 @@
 	
 	Yannick Devos - ZL4YY (https://blog.qscope.org)
 	https://github.com/zl4yy/micropython
- 	22 May 2021
+ 	5 June 2021
 	
 	Software provided under MIT License
 
 */
 
 // Pin coding on two digits. First digit is port (A=1) and second digit is bit (PA0=10)
+
+#define NOPIN 99		// If we need to send a command but without actual action
 
 // Pins that are connected to hardware components on the board
 #define PF0 60      // Switch SW2

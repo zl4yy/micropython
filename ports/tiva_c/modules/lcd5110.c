@@ -4,7 +4,7 @@
 	
 	Yannick Devos - ZL4YY (https://blog.qscope.org)
 	https://github.com/zl4yy/micropython
- 	26 May 2021
+ 	5 June 2021
 	
 	Software provided under MIT License
 
@@ -22,9 +22,14 @@
 
 #include "lcd5110.h"
 
-#define HARDWARE_SPI (0)
+#define HARDWARE_SPI (1)    // Hardware SPI uses SSI module of Tiva C, if this is set to 0, then bit banging is used
+#define SPIPORT (0)         // Tiva C has 4 ports (0 to 3)
 #define MAX_X (84)
 #define MAX_Y (48)
+
+#if HARDWARE_SPI
+#include "modules/ssi.h"
+#endif
 
 uint8_t _pinReset;
 uint8_t _pinSerialData;
@@ -38,7 +43,7 @@ uint8_t _font;
 bool LCD_InitDone = false;
 
 uint8_t FrameBuffer[84][6];  // X * Y (Y being MAX_Y divided by 8 dot per byte)
-uint8_t CharBuffer[6][16];     // Line * Character
+//uint8_t CharBuffer[6*16];     // Line * Character
 
 void Do_LCD_5110(uint8_t pinChipSelect, uint8_t pinSerialClock, uint8_t pinSerialData, uint8_t pinDataCommand, uint8_t pinReset, uint8_t pinBacklight, uint8_t pinPushButton) {
   // Set GPIO Pin values for global variables
@@ -61,15 +66,16 @@ void Do_LCD_write(uint8_t dataCommand, uint8_t c) {
   // Wait time are required for LCD 5110
   Do_GPIO_write(_pinDataCommand, dataCommand);
   Do_SysTick_Waitus(10);
+  #if HARDWARE_SPI
+  Do_SSI_TX_FIFO(SPIPORT, c);        // Sending data to SSI 0
+  #else
   Do_GPIO_write(_pinChipSelect, false);
   Do_SysTick_Waitus(10);
-  #if HARDWARE_SPI
-  #else
   Do_GPIO_shiftOut(_pinSerialData, _pinSerialClock, MSBFIRST, c);
-  #endif
   Do_SysTick_Waitus(10);
   Do_GPIO_write(_pinChipSelect, true);
   Do_SysTick_Waitus(10);
+  #endif
 }
 
 void Do_LCD_setXY(uint8_t x, uint8_t y) {
@@ -82,6 +88,15 @@ void Do_LCD_setXY(uint8_t x, uint8_t y) {
 void Do_LCD_Init() {
   // Initialise the LCD 5110 (PCD8544)
   
+  #if HARDWARE_SPI
+  Do_LCD_5110(NOPIN,  // Chip Select
+           NOPIN,     // Serial Clock
+           NOPIN,     // Serial Data
+           PB4,     // Data/Command
+           PB7,     // Reset
+           PB6,     // Backlight
+           PF4);    // Push Button 2
+  #else
   // Set pins
   Do_LCD_5110(PB5,  // Chip Select
            PB0,     // Serial Clock
@@ -90,17 +105,23 @@ void Do_LCD_Init() {
            PB7,     // Reset
            PB6,     // Backlight
            PF4);    // Push Button 2
+  #endif
 
   // Initialise MCU hardware
   Do_GPIO_Init();
   Do_SysTick_Init();
-  Do_GPIO_output(_pinChipSelect);
-  Do_GPIO_output(_pinReset);
-  Do_GPIO_output(_pinDataCommand);
+
+  #if HARDWARE_SPI
+  Do_SSI_Init(SPIPORT); // Using SSI 0
+  #else
   Do_GPIO_output(_pinSerialData);
   Do_GPIO_output(_pinSerialClock);
+  Do_GPIO_output(_pinChipSelect);
+  #endif
   Do_GPIO_output(_pinBacklight);
   Do_GPIO_input(_pinPushButton);
+  Do_GPIO_output(_pinReset);
+  Do_GPIO_output(_pinDataCommand);
   
   // Do a reset of the PCD8544
   Do_GPIO_write(_pinDataCommand, false);			
@@ -114,9 +135,9 @@ void Do_LCD_Init() {
   Do_LCD_write(COMMANDLCD, 0xc8); // write VOP to register: 0xC8 for 3V — try other values
   Do_LCD_write(COMMANDLCD, 0x12); // set Bias System 1:48
   Do_LCD_write(COMMANDLCD, 0x20); // chip is active, horizontal addressing, use basic instruction set
-  Do_LCD_write(COMMANDLCD, 0x09); // temperature control
+  Do_LCD_write(COMMANDLCD, 0x07); // temperature control (TC0+TC1) Vlcd Temp Coef = 3
   Do_LCD_write(COMMANDLCD, 0x0c); // normal mode
-  
+
   // Set default values
   Do_LCD_clear(true);
   _font = 0;

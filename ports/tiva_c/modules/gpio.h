@@ -7,7 +7,7 @@
 	
 	Yannick Devos - ZL4YY (https://blog.qscope.org)
 	https://github.com/zl4yy/micropython
- 	27 May 2021
+ 	5 June 2021
 	
 	Software provided under MIT License
 

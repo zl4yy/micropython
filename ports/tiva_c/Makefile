@@ -24,7 +24,7 @@ INC += -I$(BUILD)
 ifeq ($(CROSS), 1)
 DFU = $(TOP)/tools/dfu.py
 PYDFU = $(TOP)/tools/pydfu.py
-MCUTARGET = -DTARGET_IS_TM4C123_RA1 #Forcing target for lm4f_rom.h
+MCUTARGET = -DTARGET_IS_TM4C123_RA1 -DPART_LM4F120H5QR #Forcing target for lm4f_rom.h and lm4f_pin_map.h
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -msoft-float -fsingle-precision-constant -Wdouble-promotion -Wfloat-conversion
 CFLAGS = $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) $(MCUTARGET)
 
@@ -58,6 +58,7 @@ SRC_C = \
 	modules/gpio.c \
 	modules/time.c \
 	modules/lcd5110.c \
+	modules/ssi.c \
 
 ifeq ($(CROSS), 1)
 SRC_C += lib/libc/string0.c
@@ -66,6 +67,7 @@ endif
 SRC_QSTR += modules/gpio.c
 SRC_QSTR += modules/time.c 
 SRC_QSTR += modules/lcd5110.c 
+SRC_QSTR += modules/ssi.c 
 
 OBJ = $(PY_CORE_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 

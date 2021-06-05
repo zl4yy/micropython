@@ -29,6 +29,7 @@
 
 #define MICROPY_HW_BOARD_NAME       "Stellaris Launch Pad"
 #define MICROPY_HW_MCU_NAME         "LM4F120H5QR"
+#define PART_LM4F120H5QR
 
 #define SYS_TICK_DIVIDER            (1000)
 

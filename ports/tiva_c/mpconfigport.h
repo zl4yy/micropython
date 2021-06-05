@@ -46,7 +46,7 @@
 // Port specific modules
 #define MICROPY_MODULE_GPIO         (1)
 #define MICROPY_MODULE_TIME         (1)
-#define MICROPY_MODULE_SPI          (0)
+#define MICROPY_MODULE_SSI          (1)
 #define MICROPY_MODULE_LCD5110      (1)
 
 // type definitions for the specific machine
