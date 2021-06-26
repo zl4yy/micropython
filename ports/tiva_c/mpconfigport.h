@@ -48,6 +48,7 @@
 #define MICROPY_MODULE_TIME         (1)
 #define MICROPY_MODULE_SSI          (1)
 #define MICROPY_MODULE_LCD5110      (1)
+#define MICROPY_MODULE_SDCARD       (1)
 
 // type definitions for the specific machine
 

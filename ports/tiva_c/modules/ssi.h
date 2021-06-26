@@ -71,7 +71,16 @@
 */
 
 // Initialise registers to SPI
-void Do_SSI_Init(uint8_t ssinum);
+void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg);
+
+// Initialise registers to SSI for SD Card operations
+void Do_SSI_Init_SDCard(uint8_t ssinum, uint16_t ssicfg);
+
+// Disable SSI
+void Do_SSI_Disable(uint8_t ssinum);
+
+// Enable SSI
+void Do_SSI_Enable(uint8_t ssinum);
 
 // Send data via SSI
 void Do_SSI_TX(uint8_t ssinum, uint32_t word);
@@ -81,5 +90,9 @@ void Do_SSI_TX_FIFO(uint8_t ssinum, uint32_t word);
 
 // Check if SSI port is still sending data
 bool Do_SSI_Busy(uint8_t ssinum);
+
+// Receive data via SSI 
+uint8_t Do_SSI_RX(uint8_t ssinum, uint32_t *word);
+void Do_SSI_RX_Blocking(uint8_t ssinum, uint32_t *word);
 
 #endif

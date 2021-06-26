@@ -93,8 +93,8 @@ void Do_LCD_Init() {
            NOPIN,     // Serial Clock
            NOPIN,     // Serial Data
            PB4,     // Data/Command
-           PB7,     // Reset
-           PB6,     // Backlight
+           PB0,     // Reset
+           PB1,     // Backlight
            PF4);    // Push Button 2
   #else
   // Set pins
@@ -112,7 +112,7 @@ void Do_LCD_Init() {
   Do_SysTick_Init();
 
   #if HARDWARE_SPI
-  Do_SSI_Init(SPIPORT); // Using SSI 0
+  Do_SSI_Init(SPIPORT,10041); // Using SSI 0 Master, SPI frame format, 4 Mbps, 8 data bits
   #else
   Do_GPIO_output(_pinSerialData);
   Do_GPIO_output(_pinSerialClock);
@@ -134,9 +134,11 @@ void Do_LCD_Init() {
   Do_LCD_write(COMMANDLCD, 0x21); // chip is active, horizontal addressing, use extended instruction set
   Do_LCD_write(COMMANDLCD, 0xc8); // write VOP to register: 0xC8 for 3V — try other values
   Do_LCD_write(COMMANDLCD, 0x12); // set Bias System 1:48
-  Do_LCD_write(COMMANDLCD, 0x20); // chip is active, horizontal addressing, use basic instruction set
   Do_LCD_write(COMMANDLCD, 0x07); // temperature control (TC0+TC1) Vlcd Temp Coef = 3
+  Do_LCD_write(COMMANDLCD, 0x20); // chip is active, horizontal addressing, use basic instruction set
   Do_LCD_write(COMMANDLCD, 0x0c); // normal mode
+
+  // TODO: create Do_LCD_setcontrast
 
   // Set default values
   Do_LCD_clear(true);
@@ -246,7 +248,7 @@ STATIC mp_obj_t lcd_info(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(lcd_info_obj, lcd_info);
 
 // Initialise LCD
-STATIC mp_obj_t lcd_init(void) {
+STATIC mp_obj_t lcd_init() {
 	Do_LCD_Init();
   return mp_const_none;
 }

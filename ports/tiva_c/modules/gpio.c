@@ -37,7 +37,7 @@ void gpio_error_notinitialised () {
 
 // Enable the GPIO port that is used for the on-board LEDs and Switches.
 void Do_GPIO_Init() {
-	SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOB | SYSCTL_RCGC2_GPIOF;
+	SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOA | SYSCTL_RCGC2_GPIOB | SYSCTL_RCGC2_GPIOC | SYSCTL_RCGC2_GPIOD | SYSCTL_RCGC2_GPIOE | SYSCTL_RCGC2_GPIOF;
 	GPIO_InitDone = true;
 	Do_SysTick_Init();
 }

@@ -54,11 +54,13 @@ SRC_C = \
 	lib/utils/stdout_helpers.c \
 	lib/utils/pyexec.c \
 	lib/mp-readline/readline.c \
-	$(BUILD)/_frozen_mpy.c \
+	$(BUILD)/_gpiotest_mpy.c \
 	modules/gpio.c \
 	modules/time.c \
-	modules/lcd5110.c \
 	modules/ssi.c \
+	modules/lcd5110.c \
+	modules/sdcard.c \
+	modules/sdcard_mod.c \
 
 ifeq ($(CROSS), 1)
 SRC_C += lib/libc/string0.c
@@ -68,6 +70,7 @@ SRC_QSTR += modules/gpio.c
 SRC_QSTR += modules/time.c 
 SRC_QSTR += modules/lcd5110.c 
 SRC_QSTR += modules/ssi.c 
+SRC_QSTR += modules/sdcard_mod.c 
 
 OBJ = $(PY_CORE_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
@@ -77,9 +80,10 @@ else
 all: $(BUILD)/firmware.elf
 endif
 
-$(BUILD)/_frozen_mpy.c: gpiotest.mpy lcdtest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
-	$(ECHO) "MISC freezing bytecode"
+$(BUILD)/_gpiotest_mpy.c: gpiotest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
+	$(ECHO) "Freezing GPIO test bytecode"
 	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
+
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(ECHO) "LINK $@"

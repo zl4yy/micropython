@@ -71,33 +71,37 @@ void Do_SysTick_Init() {
 
 // The delay parameter is in units of the 80 MHz core clock. (12.5 ns)
 void Do_SysTick_Wait(uint32_t delay) {
-    if (SysTick_InitDone == false) {
-        time_error_notinitialised();
-    } else{
-        NVIC_ST_RELOAD_R = delay-1;  // number of counts to wait
-        NVIC_ST_CURRENT_R = 0;       // any value written to CURRENT clears
-        while ((NVIC_ST_CTRL_R&0x00010000)==0) {} // wait for count flag
-    }
+    NVIC_ST_RELOAD_R = delay-1;  // number of counts to wait
+    NVIC_ST_CURRENT_R = 0;       // any value written to CURRENT clears
+    while ((NVIC_ST_CTRL_R&0x00010000)==0) {} // wait for count flag
 }
 
 // The delay parameter is in milliseconds
 void Do_SysTick_Waitms(uint32_t delay) {
 	uint32_t i;
 	
-	for(i=0; i<delay; i++){
-    	Do_SysTick_Wait(80000);  // wait 1ms
-		// 80000*12.5ns equals 1ms
-	}
+    if (SysTick_InitDone == false) {
+        time_error_notinitialised();
+    } else {
+        for(i=0; i<delay; i++){
+            Do_SysTick_Wait(80000);  // wait 1ms
+            // 80000*12.5ns equals 1ms
+        }
+    }
 }
 
 // The delay parameter is in micro-seconds
 void Do_SysTick_Waitus(uint32_t delay) {
 	uint32_t i;
 	
-	for(i=0; i<delay; i++){
-    	Do_SysTick_Wait(80);  // wait 1ms
-		// 80*12.5ns equals 1ms
-	}
+    if (SysTick_InitDone == false) {
+        time_error_notinitialised();
+    } else {
+        for(i=0; i<delay; i++){
+            Do_SysTick_Wait(80);  // wait 1ms
+            // 80*12.5ns equals 1ms
+        }
+    }
 }
 
 // Return the current tick value in ms

@@ -1,6 +1,6 @@
 # Texas Instruments Tiva C Micropython port (based on minimal port to STM32)
 
-Yannick Devos (ZL4YY), 29 May 2021
+Yannick Devos (ZL4YY), 26 June 2021
 
 This port is intended to be a minimal MicroPython port that actually runs on the Tiva C
 platform. It was developed and tested on the Stellaris Launchpad (EK-LM4F120XL) board but
@@ -20,11 +20,13 @@ https://www.ti.com/tool/EK-TM4C123GXL
 This is a minimalist port and only provides:
 - REPL interface to MicroPython
 - UART0 at 115kbps (via USB debug port)
-- Onboard GPIO control to use LEDs and Switches
+- Onboard GPIO control
 - Time and delay using SysTick
 - Nokia 5110 LCD clones (PD8544 based)
+- SSI basic SPI Master (Motorola/Freescale mode)
+- SD Card reader in SPI mode (Read only)
 
-Full GPIO control, SPI, I2C, DMA or hardware FPU are not supported.
+ADC, I2C, DMA or hardware FPU are not supported.
 
 ## Time and delay
 Example usage:
@@ -73,6 +75,38 @@ Example usage:
 Font can be lcd.small or lcd.large and lcd.write first's parameter is either lcd.data or lcd.cmnd.
 NOTE: The PD8544 chip must be initialised very shortly after power up or it does not work properly.
 You may need to start the MCU first and apply power to the LCD only before the lcd.init().
+
+## SSI Support
+Example usage:
+	import ssi
+	ssi.init(0,10041)
+	ssi.write_fifo(0,0x21)
+	while(sss.isbusy(0)) {};
+	ssi.write(0,0xFF)
+
+NOTE: 4 SSI ports are available but SSI 1 may conflict with LaunchPad LED and switch hardware.
+The first value of the init command is the SSI port, second is configuration under the form CMFBD
+	- C is for clock source, 1 for PIO at 16 MHz or 2 for CPU clock at 80MHz)
+	- M is 0 for master, 1 for slave, 2 for slave OD
+	- F is Frame Format with 0/1/2/3 being Freescale frame format, 4 is Microwire, 5 is TI SFF
+	- B is bitrate with 0 = 250Kbps, 1 = 500 Kbps, 2 = 1 Mbps, 3 = 2 Mbps, 4 = 4 Mbps, 5 = 8 Mbps,
+		6 = 12 Mbps, 7 = 16 Mbps, 8 = 20 Mbps, 9 = 25 Mbps (C =2 required above 8 Mbps)
+	- D is data size (0 = 4, 1 = 8, 2 = 16, 3 = 32)
+If configuration is incorrect,  default is SPI Master Motorola/Freescale mode SPO=0 SPH=0, MSBFIRST, 8 Mbps. DMA operation is not available.
+All other commands take port number as first value.
+
+## SD Card support
+Basic SD Card support is available, Read-Only at the moment.
+The module can list files in the root dir, print text files to screen, read files and return the content as a string, run .py files (Python text code) and run .mpy files (Python Object code).
+	import sdcard
+	sdcard.init(3)				Use SSI port 3
+	sdcard.listdir()
+	sdcard.printfile(0)			Print first file of the list (#0) to screen
+	exec(sdcard.readfile(0))	Execute first file
+	sdcard.execfile(0)			Execute firtt file, but uses less memory than previous command
+
+## I2C Support
+Coming soon.
 
 ## Running the Frozen bytecode to test GPIO
 An example of frozen bytecode is provided in gpiotest.py to demonstrate GPIO usage. It

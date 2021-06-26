@@ -64,9 +64,9 @@
 #define PD7 47      // J4.32
 #define PD6 46      // J4.33
 #define PC7 37      // J4.34
-#define PC6 37      // J4.35
+#define PC6 36      // J4.35
 #define PC5 35      // J4.36
 #define PC4 34      // J4.37
-#define PB3 38      // J4.38
+#define PB3 33      // J4.38
 // PF3 Green LED       J4.39
 // PF2 Blue LED        J4.40
