@@ -79,11 +79,13 @@ a port.  To build mpy-cross use:
     $ make
 
 
-The LM4F120 version
+The Tiva C (LM4F120) version
 -------------------
 
 There is a functional minimal port to the Texas Instruments Stellaris LaunchPad.
 UART and basic GPIO control are implemented.
+Another port is still under development but brings support of GPIO, SSI, I2C as well as
+SD Card and other peripherals.
 
 More details available in the ports/tiva_c-minimal and ports/tiva_c directories.
 
