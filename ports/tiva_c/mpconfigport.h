@@ -7,6 +7,7 @@
 // will still be able to execute pre-compiled scripts, compiled with mpy-cross.
 #define MICROPY_ENABLE_COMPILER     (1)
 
+#define MICROPY_HEAPSIZE            (8192)
 #define MICROPY_QSTR_BYTES_IN_HASH  (1)
 #define MICROPY_QSTR_EXTRA_POOL     mp_qstr_frozen_const_pool
 #define MICROPY_ALLOC_PATH_MAX      (256)
@@ -47,8 +48,18 @@
 #define MICROPY_MODULE_GPIO         (1)
 #define MICROPY_MODULE_TIME         (1)
 #define MICROPY_MODULE_SSI          (1)
+#define MICROPY_MODULE_I2C          (1)
 #define MICROPY_MODULE_LCD5110      (1)
 #define MICROPY_MODULE_SDCARD       (1)
+#define MICROPY_MODULE_BMP085       (1)
+//#define MICROPY_MODULE_DS1307      (1)
+
+// Default behaviour
+#define INIT_SDCARD                 (1)
+#define INIT_SDCARD_SPI_PORT        (3)
+#define INIT_SDCARD_BOOT            (1)
+#define INIT_LCD                    (0)
+
 
 // type definitions for the specific machine
 
@@ -72,7 +83,6 @@ typedef long mp_off_t;
 
 #ifdef __thumb__
 #define MICROPY_MIN_USE_CORTEX_CPU (1)
-#define MICROPY_MIN_USE_STM32_MCU (0)
 #define MICROPY_MIN_USE_LM4F_MCU (1)
 #endif
 

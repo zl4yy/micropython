@@ -1,7 +1,7 @@
 /*
 
     Headers
-	Basic SSI control for Texas Instruments LM4F Microcontrollers
+	SSI control for Texas Instruments LM4F Microcontrollers
 	
 	Yannick Devos - ZL4YY (https://blog.qscope.org)
 	https://github.com/zl4yy/micropython
@@ -70,11 +70,8 @@
 
 */
 
-// Initialise registers to SPI
-void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg);
-
-// Initialise registers to SSI for SD Card operations
-void Do_SSI_Init_SDCard(uint8_t ssinum, uint16_t ssicfg);
+// Initialise registers for SSI
+void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg, bool sdcard);
 
 // Disable SSI
 void Do_SSI_Disable(uint8_t ssinum);

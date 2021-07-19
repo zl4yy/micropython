@@ -26,6 +26,10 @@
 #include "py/mperrno.h"
 #include "lib/utils/pyexec.h"
 
+#ifdef INIT_SDCARD
+#include "modules/sdcard.h"
+#include "modules/time.h"
+# endif
 
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
@@ -46,7 +50,7 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 
 static char *stack_top;
 #if MICROPY_ENABLE_GC
-static char heap[3072];
+static char heap[MICROPY_HEAPSIZE];
 #endif
 
 #if MICROPY_MIN_USE_LM4F_MCU
@@ -183,12 +187,6 @@ void _start(void) {
     // SCB->CCR: enable 8-byte stack alignment for IRQ handlers, in accord with EABI
     *((volatile uint32_t *)0xe000ed14) |= 1 << 9;
 
-    // initialise the cpu and peripherals
-    #if MICROPY_MIN_USE_STM32_MCU
-    void stm32_init(void);
-    stm32_init();
-    #endif
-
     #if MICROPY_MIN_USE_LM4F_MCU
     void lm4f_init(void);
     lm4f_init();
@@ -204,95 +202,6 @@ void _start(void) {
 
 #endif
 
-#if MICROPY_MIN_USE_STM32_MCU
-
-// this is minimal set-up code for an STM32 MCU
-
-typedef struct {
-    volatile uint32_t CR;
-    volatile uint32_t PLLCFGR;
-    volatile uint32_t CFGR;
-    volatile uint32_t CIR;
-    uint32_t _1[8];
-    volatile uint32_t AHB1ENR;
-    volatile uint32_t AHB2ENR;
-    volatile uint32_t AHB3ENR;
-    uint32_t _2;
-    volatile uint32_t APB1ENR;
-    volatile uint32_t APB2ENR;
-} periph_rcc_t;
-
-typedef struct {
-    volatile uint32_t MODER;
-    volatile uint32_t OTYPER;
-    volatile uint32_t OSPEEDR;
-    volatile uint32_t PUPDR;
-    volatile uint32_t IDR;
-    volatile uint32_t ODR;
-    volatile uint16_t BSRRL;
-    volatile uint16_t BSRRH;
-    volatile uint32_t LCKR;
-    volatile uint32_t AFR[2];
-} periph_gpio_t;
-
-typedef struct {
-    volatile uint32_t SR;
-    volatile uint32_t DR;
-    volatile uint32_t BRR;
-    volatile uint32_t CR1;
-} periph_uart_t;
-
-#define USART1 ((periph_uart_t *)0x40011000)
-#define GPIOA  ((periph_gpio_t *)0x40020000)
-#define GPIOB  ((periph_gpio_t *)0x40020400)
-#define RCC    ((periph_rcc_t *)0x40023800)
-
-// simple GPIO interface
-#define GPIO_MODE_IN (0)
-#define GPIO_MODE_OUT (1)
-#define GPIO_MODE_ALT (2)
-#define GPIO_PULL_NONE (0)
-#define GPIO_PULL_UP (0)
-#define GPIO_PULL_DOWN (1)
-void gpio_init(periph_gpio_t *gpio, int pin, int mode, int pull, int alt) {
-    gpio->MODER = (gpio->MODER & ~(3 << (2 * pin))) | (mode << (2 * pin));
-    // OTYPER is left as default push-pull
-    // OSPEEDR is left as default low speed
-    gpio->PUPDR = (gpio->PUPDR & ~(3 << (2 * pin))) | (pull << (2 * pin));
-    gpio->AFR[pin >> 3] = (gpio->AFR[pin >> 3] & ~(15 << (4 * (pin & 7)))) | (alt << (4 * (pin & 7)));
-}
-#define gpio_get(gpio, pin) ((gpio->IDR >> (pin)) & 1)
-#define gpio_set(gpio, pin, value) do { gpio->ODR = (gpio->ODR & ~(1 << (pin))) | (value << pin); } while (0)
-#define gpio_low(gpio, pin) do { gpio->BSRRH = (1 << (pin)); } while (0)
-#define gpio_high(gpio, pin) do { gpio->BSRRL = (1 << (pin)); } while (0)
-
-void stm32_init(void) {
-    // basic MCU config
-    RCC->CR |= (uint32_t)0x00000001; // set HSION
-    RCC->CFGR = 0x00000000; // reset all
-    RCC->CR &= (uint32_t)0xfef6ffff; // reset HSEON, CSSON, PLLON
-    RCC->PLLCFGR = 0x24003010; // reset PLLCFGR
-    RCC->CR &= (uint32_t)0xfffbffff; // reset HSEBYP
-    RCC->CIR = 0x00000000; // disable IRQs
-
-    // leave the clock as-is (internal 16MHz)
-
-    // enable GPIO clocks
-    RCC->AHB1ENR |= 0x00000003; // GPIOAEN, GPIOBEN
-
-    // turn on an LED! (on pyboard it's the red one)
-    gpio_init(GPIOA, 13, GPIO_MODE_OUT, GPIO_PULL_NONE, 0);
-    gpio_high(GPIOA, 13);
-
-    // enable UART1 at 9600 baud (TX=B6, RX=B7)
-    gpio_init(GPIOB, 6, GPIO_MODE_ALT, GPIO_PULL_NONE, 7);
-    gpio_init(GPIOB, 7, GPIO_MODE_ALT, GPIO_PULL_NONE, 7);
-    RCC->APB2ENR |= 0x00000010; // USART1EN
-    USART1->BRR = (104 << 4) | 3; // 16MHz/(16*104.1875) = 9598 baud
-    USART1->CR1 = 0x0000200c; // USART enable, tx enable, rx enable
-}
-
-#endif
 
 #if MICROPY_MIN_USE_LM4F_MCU
 
@@ -363,6 +272,87 @@ void UART_Init0(void){
   GPIO_PORTA_AMSEL_R &= ~0x03;          // disable analog functionality on PA
 }
 
+#if INIT_SDCARD
+// SD Card Init
+void SDCARD_Init(void) {
+    Do_SysTick_Init();
+	Do_SysTick_Waitms(100);
+    Do_SD_SetPins(INIT_SDCARD_SPI_PORT);
+
+    // Using SSI 3 Master, SPI frame format, 250 Kbps, 8 data bits
+    // LM4F's SSI support 32 bits frames but the code is currently writen to shift 8 bits at a time
+    Do_SSI_Init(INIT_SDCARD_SPI_PORT, 10001, true);
+
+	if (Do_SD_initialise()) {
+        Do_SD_cs_high();
+        // Using SSI 3 Master, SPI frame format, 8 Mbps, 8 data bits.
+        // 8 Mbps is conservative but should work with all SD cards and is plenty enough for most applications
+        // LM4F's SSI support 32 bits frames but the code is currently writen to shift 8 bits at a time
+        // NOTE: Settings must be consistent with Do_SD_initialise in sdcard.c used for high speed reset
+        Do_SSI_Init(INIT_SDCARD_SPI_PORT, 20051, true);
+        Do_SD_tx_SSI();
+
+        Do_SD_cs_low();
+        Do_SD_read_first_sector();
+        Do_SD_read_disk_data();
+
+        mp_printf(&mp_plat_print, "SD Card initialised.\n");
+
+        // List files and store them in memory but doesn't print out the result
+        long next_cluster=Do_SD_get_root_dir_first_cluster();
+        do {
+            next_cluster=Do_SD_get_files_and_dirs(next_cluster, LONG_NAME, GET_SUBDIRS, false);
+        } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF);
+
+    } else {
+        mp_printf(&mp_plat_print, "SD Card init error.\n");
+    }
+}
+
+#if INIT_SDCARD_BOOT
+// Execute bootfile from SD Card
+void SDCARD_boot (void) {
+
+    uint8_t filenum = Do_SD_find_file_by_name("lcdtest@.py@");
+    //uint8_t filenum = Do_SD_find_file_by_name("boot@@@.py@"");
+
+    if (filenum<40) {
+        uint16_t offset=0;
+        unsigned char source[BUFFERSIZE];
+
+        long next_cluster=Do_SD_get_first_cluster(filenum);
+
+        do {
+            next_cluster=Do_SD_read_file(next_cluster, &source[offset], &offset);
+        } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF && offset < BUFFERSIZE);
+
+        if (offset>=BUFFERSIZE) {
+            mp_printf(&mp_plat_print, "Boot file too large.\n");
+        } else {
+            mp_printf(&mp_plat_print, "Executing bootfile.\n");
+            nlr_buf_t nlr;
+            if (nlr_push(&nlr) == 0) {
+                mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, (char*)source, strlen((char*)source), 0);
+                qstr source_name = lex->source_name;
+                mp_parse_tree_t parse_tree = mp_parse(lex, MP_PARSE_FILE_INPUT);
+                mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
+                mp_call_function_0(module_fun);
+                nlr_pop();
+            } else {
+                // uncaught exception
+                mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
+            }
+        };
+    } else {
+        mp_printf(&mp_plat_print, "Boot file not found.\n");
+    }
+
+
+}
+#endif
+#endif
+
+
 // Function called when REPL ends
 void lm4f_reset(void) {
     // Reset MCU
@@ -384,6 +374,13 @@ void lm4f_init(void) {
 
     // Initialise the hardware
     UART_Init0();
+
+    #if INIT_SDCARD
+    SDCARD_Init();
+    #if INIT_SDCARD_BOOT
+    SDCARD_boot();
+    #endif
+    #endif
 
 }
 

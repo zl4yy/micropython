@@ -1,6 +1,6 @@
 /*
 
-	Basic SSI control for Texas Instruments LM4F Microcontrollers
+	SSI control for Texas Instruments LM4F Microcontrollers
 	
 	Yannick Devos - ZL4YY (https://blog.qscope.org)
 	https://github.com/zl4yy/micropython
@@ -39,8 +39,8 @@ void ssi_err_portnotavailable() {
     mp_printf(&mp_plat_print, "SSI port not available.\n");
 }
 
-// Initialise registers to SSI
-void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg) {
+// Initialise registers for SSI
+void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg, bool sdcard) {
     uint32_t initialData = 0;
 
     // Default settings
@@ -157,10 +157,14 @@ void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg) {
 
             // Configure GPIO pins for special functions
             ROM_GPIOPinConfigure(GPIO_PA2_SSI0CLK);
-            ROM_GPIOPinConfigure(GPIO_PA5_SSI0TX);
             ROM_GPIOPinConfigure(GPIO_PA4_SSI0RX);
-            ROM_GPIOPinConfigure(GPIO_PA3_SSI0FSS);
-            ROM_GPIOPinTypeSSI(GPIO_PORTA_BASE, 0x3c); // Pins 2 3 4 5 of Port A used for SSI
+            if (!sdcard) {
+                ROM_GPIOPinConfigure(GPIO_PA5_SSI0TX);
+                ROM_GPIOPinConfigure(GPIO_PA3_SSI0FSS);
+                ROM_GPIOPinTypeSSI(GPIO_PORTA_BASE, 0x3c); // Pins 2 3 4 5 of Port A used for SSI
+            } else {
+                ROM_GPIOPinTypeSSI(GPIO_PORTF_BASE, 0x05); // Pins 0 2 of Port F used for SSI, CS PF3 and MOSI PF1 is freed
+            };
 
             //Configure and enable SSI port
             // Use internal 16Mhz RC oscillator as SSI clock source
@@ -185,10 +189,14 @@ void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg) {
 
             // Configure GPIO pins for special functions
             ROM_GPIOPinConfigure(GPIO_PF2_SSI1CLK);
-            ROM_GPIOPinConfigure(GPIO_PF1_SSI1TX);
             ROM_GPIOPinConfigure(GPIO_PF0_SSI1RX);
-            ROM_GPIOPinConfigure(GPIO_PF3_SSI1FSS);
-            ROM_GPIOPinTypeSSI(GPIO_PORTF_BASE, 0x0f); // Pins 0 1 2 3 of Port F used for SSI
+            if (!sdcard) {
+                ROM_GPIOPinConfigure(GPIO_PF3_SSI1FSS);
+                ROM_GPIOPinConfigure(GPIO_PF1_SSI1TX);
+                ROM_GPIOPinTypeSSI(GPIO_PORTF_BASE, 0x0f); // Pins 0 1 2 3 of Port F used for SSI
+            } else {
+                ROM_GPIOPinTypeSSI(GPIO_PORTF_BASE, 0x05); // Pins 0 2 of Port F used for SSI, CS PF3 and MOSI PF1 is freed
+            }
 
             //Configure and enable SSI port
             // Use internal 16Mhz RC oscillator as SSI clock source
@@ -213,10 +221,14 @@ void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg) {
 
             // Configure GPIO pins for special functions
             ROM_GPIOPinConfigure(GPIO_PB4_SSI2CLK);
-            ROM_GPIOPinConfigure(GPIO_PB7_SSI2TX);
             ROM_GPIOPinConfigure(GPIO_PB6_SSI2RX);
-            ROM_GPIOPinConfigure(GPIO_PB5_SSI2FSS);
-            ROM_GPIOPinTypeSSI(GPIO_PORTB_BASE, 0xF0);  // Pins 4 5 6 7 of port B used for SSI
+            if (!sdcard) {
+                ROM_GPIOPinConfigure(GPIO_PB7_SSI2TX);
+                ROM_GPIOPinConfigure(GPIO_PB5_SSI2FSS);
+                ROM_GPIOPinTypeSSI(GPIO_PORTB_BASE, 0xF0);  // Pins 4 5 6 7 of port B used for SSI
+            } else {
+                ROM_GPIOPinTypeSSI(GPIO_PORTB_BASE, 0x50);  // Pins 4 6 of port B used for SSI, CS PB5 and MOSI PB7 is freed
+            }
 
             //Configure and enable SSI port
             // Use internal 16Mhz RC oscillator as SSI clock source
@@ -241,10 +253,15 @@ void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg) {
 
             // Configure GPIO pins for special functions
             ROM_GPIOPinConfigure(GPIO_PD0_SSI3CLK);
-            ROM_GPIOPinConfigure(GPIO_PD3_SSI3TX);
             ROM_GPIOPinConfigure(GPIO_PD2_SSI3RX);
-            ROM_GPIOPinConfigure(GPIO_PD1_SSI3FSS);
-            ROM_GPIOPinTypeSSI(GPIO_PORTD_BASE, 0x0f);   // Pins 0 2 1 3 of Port D used for SSI
+            if (!sdcard) {
+                ROM_GPIOPinConfigure(GPIO_PD3_SSI3TX);
+                ROM_GPIOPinConfigure(GPIO_PD1_SSI3FSS);
+                ROM_GPIOPinTypeSSI(GPIO_PORTD_BASE, 0x0f);   // Pins 0 2 1 3 of Port D used for SSI
+            } else {
+                ROM_GPIOPinTypeSSI(GPIO_PORTD_BASE, 0x05);   // Pins 0 2 of Port D used for SSI, CS PD1 and MOSI PD3 is freed
+            }
+
 
             //Configure and enable SSI port
             // Use internal 16Mhz RC oscillator as SSI clock source
@@ -258,234 +275,6 @@ void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg) {
 
             // Load default configuration parameters
             ROM_SSIDataPut(SSI3_BASE, 0x00);
-
-            SSI_InitDone[ssinum] = true;
-            break;
-        default:
-            ssi_err_portnotavailable();
-            break;
-    }
-}
-
-// Initialise registers to SSI for SD Card operations
-void Do_SSI_Init_SDCard(uint8_t ssinum, uint16_t ssicfg) {
-    uint32_t initialData = 0;
-
-    // Default settings
-    uint32_t ssiproto = SSI_FRF_MOTO_MODE_0;
-    uint32_t ssimode = SSI_MODE_MASTER;
-    uint32_t ssibitrate = 8000000;
-    uint32_t ssidata = 8;
-    uint32_t ssiclock = SSI_CLOCK_PIOSC;
-    uint32_t clkvalue = 16000000;
-
-    // Select Clock source
-    switch (ssicfg/10000) {
-        case 1:
-            ssiclock = SSI_CLOCK_PIOSC;
-            clkvalue = 16000000;
-            break;
-        case 2:
-            ssiclock = SSI_CLOCK_SYSTEM;
-            clkvalue = 80000000;
-            break;
-    }
-
-    // Select Master / Slave
-    switch (ssicfg/1000) {
-        case 0:
-            ssimode = SSI_MODE_MASTER;
-            break;
-        case 1:
-            ssimode = SSI_MODE_SLAVE;
-            break;
-        case 2:
-            ssimode = SSI_MODE_SLAVE_OD;
-            break;
-    }
-
-    // Select Frame Format
-    switch (ssicfg/100) {
-        case 0:
-            ssiproto = SSI_FRF_MOTO_MODE_0;
-            break;
-        case 1:
-            ssiproto = SSI_FRF_MOTO_MODE_1;
-            break;
-        case 2:
-            ssiproto = SSI_FRF_MOTO_MODE_2;
-            break;
-        case 3:
-            ssiproto = SSI_FRF_MOTO_MODE_3;
-            break;
-        case 4:
-            ssiproto = SSI_FRF_NMW;
-            break;
-        case 5:
-            ssiproto = SSI_FRF_TI;
-            break;
-    }
-
-    // Select Bitrate
-    switch (ssicfg/10) {
-        case 0:
-            ssibitrate = 250000;
-            break;
-        case 1:
-            ssibitrate = 500000;
-            break;
-        case 2:
-            ssibitrate = 1000000;
-            break;
-        case 3:
-            ssibitrate = 2000000;
-            break;
-        case 4:
-            ssibitrate = 4000000;
-            break;
-        case 5:
-            ssibitrate = 8000000;
-            break;
-        case 6:
-            if (ssiclock==SSI_CLOCK_SYSTEM) ssibitrate = 12000000;
-            break;
-        case 7:
-            if (ssiclock==SSI_CLOCK_SYSTEM) ssibitrate = 16000000;
-            break;
-        case 8:
-            if (ssiclock==SSI_CLOCK_SYSTEM) ssibitrate = 20000000;
-            break;
-        case 9:
-            if (ssiclock==SSI_CLOCK_SYSTEM) ssibitrate = 25000000;
-            break;
-    }
-
-    // Select Data Segment Size (length)
-    switch (ssicfg%10) {
-        case 0:
-            ssidata = 4;
-            break;
-        case 1:
-            ssidata = 8;
-            break;
-        case 2:
-            ssidata = 16;
-            break;
-        case 3:
-            ssidata = 32;
-            break;
-    }
-
-    switch (ssinum) {
-        case 0:
-            // enable SSI0 and GPIOD peripherals
-            ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
-            ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
-            ROM_SSIDisable(SSI0_BASE);
-
-            // Configure GPIO pins for special functions
-            ROM_GPIOPinConfigure(GPIO_PA2_SSI0CLK);
-            //ROM_GPIOPinConfigure(GPIO_PA5_SSI0TX);
-            ROM_GPIOPinConfigure(GPIO_PA4_SSI0RX);
-            //ROM_GPIOPinConfigure(GPIO_PA3_SSI0FSS);
-            ROM_GPIOPinTypeSSI(GPIO_PORTA_BASE, 0x14); // Pins 2 4 of Port A used for SSI, CS PA3 and MOSI PA5 are free
-
-            //Configure and enable SSI port
-            // Use internal 16Mhz RC oscillator as SSI clock source
-            ROM_SSIClockSourceSet(SSI0_BASE, ssiclock);
-            ROM_SSIConfigSetExpClk(SSI0_BASE, clkvalue, ssiproto,
-                    ssimode, ssibitrate, ssidata);
-            ROM_SSIEnable(SSI0_BASE);
-
-            //clear out any initial data that might be present in the RX FIFO
-            while(ROM_SSIDataGetNonBlocking(SSI0_BASE, &initialData));
-            
-            // Load default configuration parameters
-            //ROM_SSIDataPut(SSI0_BASE, 0x00);
-
-            SSI_InitDone[ssinum] = true;
-            break;
-        case 1:
-            // enable SSI1 and GPIOD peripherals
-            ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI1);
-            ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
-            ROM_SSIDisable(SSI1_BASE);
-
-            // Configure GPIO pins for special functions
-            ROM_GPIOPinConfigure(GPIO_PF2_SSI1CLK);
-            //ROM_GPIOPinConfigure(GPIO_PF1_SSI1TX);
-            ROM_GPIOPinConfigure(GPIO_PF0_SSI1RX);
-            //ROM_GPIOPinConfigure(GPIO_PF3_SSI1FSS);
-            ROM_GPIOPinTypeSSI(GPIO_PORTF_BASE, 0x05); // Pins 0 2 of Port F used for SSI, CS PF3 and MOSI PF1 is freed
-
-            //Configure and enable SSI port
-            // Use internal 16Mhz RC oscillator as SSI clock source
-            ROM_SSIClockSourceSet(SSI1_BASE, ssiclock);
-            ROM_SSIConfigSetExpClk(SSI1_BASE, clkvalue, ssiproto,
-                    ssimode, ssibitrate, ssidata);
-            ROM_SSIEnable(SSI1_BASE);
-
-            //clear out any initial data that might be present in the RX FIFO
-            while(ROM_SSIDataGetNonBlocking(SSI1_BASE, &initialData));
-
-            // Load default configuration parameters
-            //ROM_SSIDataPut(SSI1_BASE, 0x00);
-
-            SSI_InitDone[ssinum] = true;
-            break;
-        case 2:
-            // enable SSI2 and GPIOD peripherals
-            ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI2);
-            ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
-            ROM_SSIDisable(SSI2_BASE);
-
-            // Configure GPIO pins for special functions
-            ROM_GPIOPinConfigure(GPIO_PB4_SSI2CLK);
-            //ROM_GPIOPinConfigure(GPIO_PB7_SSI2TX);
-            ROM_GPIOPinConfigure(GPIO_PB6_SSI2RX);
-            //ROM_GPIOPinConfigure(GPIO_PB5_SSI2FSS);
-            ROM_GPIOPinTypeSSI(GPIO_PORTB_BASE, 0x50);  // Pins 4 6 of port B used for SSI, CS PB5 and MOSI PB7 is freed
-
-            //Configure and enable SSI port
-            // Use internal 16Mhz RC oscillator as SSI clock source
-            ROM_SSIClockSourceSet(SSI2_BASE, ssiclock);
-            ROM_SSIConfigSetExpClk(SSI2_BASE, clkvalue, ssiproto,
-                    ssimode, ssibitrate, ssidata);
-            ROM_SSIEnable(SSI2_BASE);
-
-            //clear out any initial data that might be present in the RX FIFO
-            while(ROM_SSIDataGetNonBlocking(SSI2_BASE, &initialData));
-
-            // Load default configuration parameters
-            //ROM_SSIDataPut(SSI2_BASE, 0x00);
-
-            SSI_InitDone[ssinum] = true;
-            break;
-        case 3:
-            // enable SSI3 and GPIOD peripherals
-            ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI3);
-            ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-            ROM_SSIDisable(SSI3_BASE);
-
-            // Configure GPIO pins for special functions
-            ROM_GPIOPinConfigure(GPIO_PD0_SSI3CLK);
-            //ROM_GPIOPinConfigure(GPIO_PD3_SSI3TX);
-            ROM_GPIOPinConfigure(GPIO_PD2_SSI3RX);
-            //ROM_GPIOPinConfigure(GPIO_PD1_SSI3FSS);
-            ROM_GPIOPinTypeSSI(GPIO_PORTD_BASE, 0x05);   // Pins 0 2 of Port D used for SSI, CS PD1 and MOSI PD3 is freed
-
-            //Configure and enable SSI port
-            // Use internal 16Mhz RC oscillator as SSI clock source
-            ROM_SSIClockSourceSet(SSI3_BASE, ssiclock);
-            ROM_SSIConfigSetExpClk(SSI3_BASE, clkvalue, ssiproto,
-                    ssimode, ssibitrate, ssidata);
-            ROM_SSIEnable(SSI3_BASE);
-
-            //clear out any initial data that might be present in the RX FIFO
-            while(ROM_SSIDataGetNonBlocking(SSI3_BASE, &initialData));
-
-            // Load default configuration parameters
-            //ROM_SSIDataPut(SSI3_BASE, 0x00);
 
             SSI_InitDone[ssinum] = true;
             break;
@@ -676,34 +465,6 @@ void Do_SSI_RX_Blocking(uint8_t ssinum, uint32_t *word) {
     //return word;
 }
 
-/*uint8_t Do_SSI_RX(uint8_t ssinum, uint32_t** word) {
-    uint8_t length = 0;
-
-    if (!SSI_InitDone[ssinum]) {
-        ssi_err_portnotavailable();
-    } else {
-        switch (ssinum) {
-        case 0:
-            ROM_SSIDataGetNonBlocking(SSI0_BASE, *word);
-            break;  
-        case 1:
-            ROM_SSIDataGetNonBlocking(SSI1_BASE, *word);
-            break;
-        case 2:
-            ROM_SSIDataGetNonBlocking(SSI2_BASE, *word);
-            break;
-        case 3:
-            ROM_SSIDataGetNonBlocking(SSI3_BASE, *word);
-            break;
-        default:
-            ssi_err_portnotavailable();
-            break;
-        }
-    }
-    return length;
-}*/
-
-
 /*
 
     MicroPython Wrappers
@@ -712,7 +473,7 @@ void Do_SSI_RX_Blocking(uint8_t ssinum, uint32_t *word) {
 
 // Display basic help
 STATIC mp_obj_t ssi_info(void) {
-    mp_printf(&mp_plat_print, "Initialise with ssi.init()\n");
+    mp_printf(&mp_plat_print, "Initialise with ssi.init(<ssiport>,<config>)\n");
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(ssi_info_obj, ssi_info);
@@ -722,22 +483,11 @@ STATIC mp_obj_t ssi_init(mp_obj_t ssinum_obj, mp_obj_t ssicfg_obj) {
     uint8_t ssinum = mp_obj_get_int(ssinum_obj);
     uint8_t ssicfg = mp_obj_get_int(ssicfg_obj);
 
-    Do_SSI_Init(ssinum,ssicfg);
+    Do_SSI_Init(ssinum,ssicfg,false);
 
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(ssi_init_obj, ssi_init);
-
-// Initialise SSI port (0 to 3) for SD Card
-STATIC mp_obj_t ssi_init_sd(mp_obj_t ssinum_obj, mp_obj_t ssicfg_obj) {
-    uint8_t ssinum = mp_obj_get_int(ssinum_obj);
-    uint8_t ssicfg = mp_obj_get_int(ssicfg_obj);
-
-    Do_SSI_Init_SDCard(ssinum,ssicfg);
-
-    return mp_const_none;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(ssi_init_sd_obj, ssi_init_sd);
 
 // Send data to SSI port
 STATIC mp_obj_t ssi_write(mp_obj_t ssinum_obj, mp_obj_t word_obj) {
@@ -789,7 +539,6 @@ STATIC const mp_rom_map_elem_t ssi_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_ssi) },
     { MP_ROM_QSTR(MP_QSTR_info), MP_ROM_PTR(&ssi_info_obj) },
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&ssi_init_obj) },
-    { MP_ROM_QSTR(MP_QSTR_init_sd), MP_ROM_PTR(&ssi_init_sd_obj) },
     { MP_ROM_QSTR(MP_QSTR_write), MP_ROM_PTR(&ssi_write_obj) },
     { MP_ROM_QSTR(MP_QSTR_write_fifo), MP_ROM_PTR(&ssi_write_fifo_obj) },
     { MP_ROM_QSTR(MP_QSTR_isbusy), MP_ROM_PTR(&ssi_isbusy_obj) },

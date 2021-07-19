@@ -23,13 +23,16 @@ This is a minimalist port and only provides:
 - Onboard GPIO control
 - Time and delay using SysTick
 - Nokia 5110 LCD clones (PD8544 based)
-- SSI basic SPI Master (Motorola/Freescale mode)
+- SSI (SPI) communication
 - SD Card reader in SPI mode (Read only)
+- I2C Master (without IRQ)
+- Bosch BMP085 temperature and pressure sessnor
 
-ADC, I2C, DMA or hardware FPU are not supported.
+ADC, I2C slave, DMA or hardware FPU are not supported.
 
 ## Time and delay
 Example usage:
+
 	import time
 	time.init()
 	time.sleep(2)
@@ -40,6 +43,7 @@ Example usage:
 
 ## Onboard LED control
 Example usage:
+
 	import gpio
 	gpio.init()
 	gpio.output(gpio.red)
@@ -53,6 +57,7 @@ Pins are encoded by Port and Pin number. Ex: PC5 is 35 (Port C =3 and pin 5), PA
 
 ## LCD 5110 Control (PD8544)
 Example usage:
+
 	import lcd
 	lcd.init()
 	lcd.setfont(lcd.large)
@@ -78,6 +83,7 @@ You may need to start the MCU first and apply power to the LCD only before the l
 
 ## SSI Support
 Example usage:
+
 	import ssi
 	ssi.init(0,10041)
 	ssi.write_fifo(0,0x21)
@@ -98,6 +104,10 @@ All other commands take port number as first value.
 ## SD Card support
 Basic SD Card support is available, Read-Only at the moment.
 The module can list files in the root dir, print text files to screen, read files and return the content as a string, run .py files (Python text code) and run .mpy files (Python Object code).
+File size for readfile and execfile is limited by a Buffer which size is set in modules/sdcard.h (default is 4KB)
+
+There is an option to configure the main.c code to initialise SD Card at MCU start and boot from a file on the SD Card
+
 	import sdcard
 	sdcard.init(3)				Use SSI port 3
 	sdcard.listdir()
@@ -106,11 +116,30 @@ The module can list files in the root dir, print text files to screen, read file
 	sdcard.execfile(0)			Execute firtt file, but uses less memory than previous command
 
 ## I2C Support
-Coming soon.
+I2C is supported. Master only without IRQ at the moment. Port 0 to 3 are accessible at either 100kbps or 400 kbps.
+Python functions are available to send individual bytes, and receive either individual bytes or burst of bytes (up to 4). More functions are available in C for internal module use.
+
+Here are the available Python functions
+
+	import i2c
+	i2c.init(0,0)				Use port 0 at 100kbps
+	i2c.write(0,0x77,0xd0)		Send 0xd0 to slave address 0x77 on I2C port 0
+	i2c.read(0,0x77)			Read one byte of data from slave 0x77 on port 0
+	i2c.request(0,0x77,0xaa,2)	Send 0xaa and then read two bytes of data from slave 0x77 on port 0
+
+## Bosch BMP085 sensor Support
+The BMP085 can be connected via I2C. BMP180 should be supported with only minor modifications but has not been tested. The following functions are supported:
+
+	import bmp085
+	bmp085.init(0)				Initialise BMP085 on I2C port 0
+	bmp085.print()				Print temperature and pressure
+	bmp085.get_temp()			Return temperature (in tenth of degrees Celcius)
+	bmp086.get_pressure()		Return pressure (in Pascal)
 
 ## Running the Frozen bytecode to test GPIO
 An example of frozen bytecode is provided in gpiotest.py to demonstrate GPIO usage. It
 should be included in your build by default. To execute it, just run:
+
 	import gpiotest
 
 
@@ -120,10 +149,12 @@ The cross-compiler toolchain used to develop this port is the one supplied with 
 Energia IDE (https://energia.nu/) which is a fork of Arduino for Texas Instruments MCUs.
 With Energia 15 on MacOS, the gcc suite and DSlite (debug / flashing tool) can be found
 at the following locations:
+
 	/Users/*yourusername*/Library/Energia15/packages/energia/tools/dslite
 	/Users/*yourusername*/Library/Energia15/packages/energia/tools/arm-none-eabi-gcc/
 
-To simplify their use I added the following commands to my .zshrc (or .bashrc): 
+To simplify their use I added the following commands to my .zshrc (or .bashrc):
+
 	alias FlashTiva="DSlite flash -e --config=/Users/*yourusername*/Library/Energia15/packages/energia/tools/dslite/9.3.0.1863/EK-TM4C123GXL.ccxml"
 	export PATH=$PATH:/Users/*yourusername*/Library/Energia15/packages/energia/tools/arm-none-eabi-gcc/8.3.1-20190703/bin
 	export PATH=$PATH:/Users/*yourusername*/Library/Energia15/packages/energia/tools/dslite/9.3.0.1863/DebugServer/bin

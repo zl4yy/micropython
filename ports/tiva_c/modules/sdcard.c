@@ -172,28 +172,17 @@ void clean_name()
 }
 
 /*
- * Print the specified file by specifying its name (case sensitive)
- * Note: For now it does not open file with accented characters in its name
+ * Find the specified file by specifying its name (case sensitive)
+ * Note: For now it does not find file with accented characters in its name
  */
-long Do_SD_print_file_by_name(char *filename)
-{
-    uint8_t index = 0;
-    if(file_next_cluster == 0x00000000)
-    {
-        while(index < 40 && strcmp(filename, file_dir[index].name.file_dir_name) != 0)
-        {
-            index++;
-        }
-        if(index < 40)
-        {
-            file_next_cluster = Do_SD_print_file(file_dir[index].name.info.first_cluster);
-        }
-    }
-    else
-    {
-        file_next_cluster = Do_SD_print_file(file_next_cluster);
-    }
-    return file_next_cluster;
+uint8_t Do_SD_find_file_by_name(char *filename)
+{   
+	uint8_t index = 0;
+	while(index < 40 && strcmp(filename, file_dir[index].name.file_dir_name) != 0)
+	{
+		index++;
+	}
+    return index;
 }
 
 /*
@@ -288,7 +277,7 @@ bool Do_SD_initialise()
 	if(Do_SD_send_command(CMD0, 0) == 1) {
 		resetsuccess = true;
 	} else {	// Try at high speed if we are trying a warm init (SD Card not fully reset)
-		Do_SSI_Init_SDCard(_spiport,20051);
+		Do_SSI_Init(_spiport,20051,true);
 		if(Do_SD_send_command(CMD0, 0) == 1) {
 			resetsuccess = true;
 		};
@@ -529,7 +518,7 @@ void Do_SD_read_disk_data()
 /*
  * List directories and files using the long name (if it has) or the short name, listing subdirectories as well if asked by the user
  */
-long Do_SD_get_files_and_dirs(long next_cluster,enum name_type name, enum get_subdirs subdirs)
+long Do_SD_get_files_and_dirs(long next_cluster,enum name_type name, enum get_subdirs subdirs, bool printout)
 {
 	uint8_t buffer[512];
     uint8_t filename[255] = "";
@@ -807,22 +796,22 @@ long Do_SD_get_files_and_dirs(long next_cluster,enum name_type name, enum get_su
 						{
 							if(file_dir[fd_count].type==IS_DIR)
 							{
-							  	mp_printf(&mp_plat_print, "%d. (DIR)\t", number);
+							  	if (printout) mp_printf(&mp_plat_print, "%d. (DIR)\t", number);
 							}
 							else
 							{
-							  	mp_printf(&mp_plat_print, "%d. (FILE)\t", number);
+							  	if (printout) mp_printf(&mp_plat_print, "%d. (FILE)\t", number);
 							}
 							uint8_t i;
 							for(i=0;i<255;i++)
 							{
 								if(file_dir[fd_count].name.file_dir_name[i]!=0x00)
 								{
-								  	mp_printf(&mp_plat_print, "%c",file_dir[fd_count].name.file_dir_name[i]);
+								  	if (printout) mp_printf(&mp_plat_print, "%c",file_dir[fd_count].name.file_dir_name[i]);
 								}
 							}
-							mp_printf(&mp_plat_print, "\t\t");
-							mp_printf(&mp_plat_print, "%d/%d/%d	%d:%d\n",file_dir[fd_count].name.info.day,file_dir[fd_count].name.info.month,file_dir[fd_count].name.info.year,file_dir[fd_count].name.info.hour,file_dir[fd_count].name.info.minute);
+							if (printout) mp_printf(&mp_plat_print, "\t\t");
+							if (printout) mp_printf(&mp_plat_print, "%d/%d/%d	%d:%d\n",file_dir[fd_count].name.info.day,file_dir[fd_count].name.info.month,file_dir[fd_count].name.info.year,file_dir[fd_count].name.info.hour,file_dir[fd_count].name.info.minute);
 							fd_count++;
 							number++;
 						}
@@ -877,18 +866,18 @@ long Do_SD_get_files_and_dirs(long next_cluster,enum name_type name, enum get_su
 		}
 		if(current_count<40 && file_dir[current_count].type==IS_DIR)
 		{
-			mp_printf(&mp_plat_print, "Content of ");
+			if (printout) mp_printf(&mp_plat_print, "Content of ");
 			uint8_t i;
 			for(i=0;i<255;i++)
 			{
 				if(file_dir[current_count].name.file_dir_name[i]!=0x00)
 				{
-					mp_printf(&mp_plat_print, "%c",file_dir[current_count].name.file_dir_name[i]);
+					if (printout) mp_printf(&mp_plat_print, "%c",file_dir[current_count].name.file_dir_name[i]);
 				}
 			}
 			next_cluster=file_dir[current_count].name.info.first_cluster;
 			current_count++;
-			mp_printf(&mp_plat_print, "\n\t");
+			if (printout) mp_printf(&mp_plat_print, "\n\t");
 		}
 	}
 	if(current_count==40)

@@ -112,7 +112,7 @@ void Do_LCD_Init() {
   Do_SysTick_Init();
 
   #if HARDWARE_SPI
-  Do_SSI_Init(SPIPORT,10041); // Using SSI 0 Master, SPI frame format, 4 Mbps, 8 data bits
+  Do_SSI_Init(SPIPORT,10041,false); // Using SSI 0 Master, SPI frame format, 4 Mbps, 8 data bits
   #else
   Do_GPIO_output(_pinSerialData);
   Do_GPIO_output(_pinSerialClock);
