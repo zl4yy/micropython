@@ -35,6 +35,8 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/uart.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/uart.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -47,8 +49,8 @@
 #include "py/mpstate.h"
 #include "py/mphal.h"
 #include "extmod/misc.h"
-#include "lib/timeutils/timeutils.h"
-#include "lib/utils/pyexec.h"
+#include "shared/timeutils/timeutils.h"
+#include "shared/runtime/pyexec.h"
 #include "mphalport.h"
 #include "usb.h"
 
@@ -108,11 +110,7 @@ int mp_hal_stdin_rx_chr(void) {
     }
 }
 
-void mp_hal_stdout_tx_str(const char *str) {
-    mp_hal_stdout_tx_strn(str, strlen(str));
-}
-
-void mp_hal_stdout_tx_strn(const char *str, uint32_t len) {
+void mp_hal_stdout_tx_strn(const char *str, size_t len) {
     // Only release the GIL if many characters are being sent
     bool release_gil = len > 20;
     if (release_gil) {
@@ -129,26 +127,6 @@ void mp_hal_stdout_tx_strn(const char *str, uint32_t len) {
         MP_THREAD_GIL_ENTER();
     }
     mp_uos_dupterm_tx_strn(str, len);
-}
-
-// Efficiently convert "\n" to "\r\n"
-void mp_hal_stdout_tx_strn_cooked(const char *str, size_t len) {
-    const char *last = str;
-    while (len--) {
-        if (*str == '\n') {
-            if (str > last) {
-                mp_hal_stdout_tx_strn(last, str - last);
-            }
-            mp_hal_stdout_tx_strn("\r\n", 2);
-            ++str;
-            last = str;
-        } else {
-            ++str;
-        }
-    }
-    if (str > last) {
-        mp_hal_stdout_tx_strn(last, str - last);
-    }
 }
 
 uint32_t mp_hal_ticks_ms(void) {
