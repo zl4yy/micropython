@@ -50,16 +50,16 @@ endif
 SRC_C = \
 	main.c \
 	uart_core.c \
-	lib/utils/printf.c \
-	lib/utils/stdout_helpers.c \
-	lib/utils/pyexec.c \
-	lib/mp-readline/readline.c \
+	shared/libc/printf.c \
+	shared/runtime/stdout_helpers.c \
+	shared/runtime/pyexec.c \
+	shared/readline/readline.c \
 	$(BUILD)/_frozen_mpy.c \
 	modules/gpio.c \
 	modules/time.c \
 
 ifeq ($(CROSS), 1)
-SRC_C += lib/libc/string0.c
+SRC_C += shared/libc/string0.c
 endif
 
 SRC_QSTR += modules/gpio.c

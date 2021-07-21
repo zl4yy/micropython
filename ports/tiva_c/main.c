@@ -24,7 +24,7 @@
 #include "py/repl.h"
 #include "py/gc.h"
 #include "py/mperrno.h"
-#include "lib/utils/pyexec.h"
+#include "shared/runtime/pyexec.h"
 
 #ifdef INIT_SDCARD
 #include "modules/sdcard.h"
@@ -332,12 +332,18 @@ void SDCARD_boot (void) {
             mp_printf(&mp_plat_print, "Executing bootfile.\n");
             nlr_buf_t nlr;
             if (nlr_push(&nlr) == 0) {
+                mp_printf(&mp_plat_print, "0 ");
                 mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, (char*)source, strlen((char*)source), 0);
+                mp_printf(&mp_plat_print, "1 ");
                 qstr source_name = lex->source_name;
                 mp_parse_tree_t parse_tree = mp_parse(lex, MP_PARSE_FILE_INPUT);
+                mp_printf(&mp_plat_print, "2 ");
                 mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
+                mp_printf(&mp_plat_print, "3 ");
                 mp_call_function_0(module_fun);
+                mp_printf(&mp_plat_print, "4 ");
                 nlr_pop();
+                mp_printf(&mp_plat_print, "5 \n");
             } else {
                 // uncaught exception
                 mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
