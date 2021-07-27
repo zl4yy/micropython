@@ -29,24 +29,8 @@
 #ifdef INIT_SDCARD
 #include "modules/sdcard.h"
 #include "modules/time.h"
+void SDCARD_boot (void);    // Declaration only
 # endif
-
-#if MICROPY_ENABLE_COMPILER
-void do_str(const char *src, mp_parse_input_kind_t input_kind) {
-    nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
-        mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, strlen(src), 0);
-        qstr source_name = lex->source_name;
-        mp_parse_tree_t parse_tree = mp_parse(lex, input_kind);
-        mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
-        mp_call_function_0(module_fun);
-        nlr_pop();
-    } else {
-        // uncaught exception
-        mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
-    }
-}
-#endif
 
 static char *stack_top;
 #if MICROPY_ENABLE_GC
@@ -68,6 +52,11 @@ int main(int argc, char **argv) {
     #endif
     mp_init();
     #if MICROPY_ENABLE_COMPILER
+    #ifdef INIT_SDCARD
+    #if INIT_SDCARD_BOOT
+    SDCARD_boot();
+    #endif
+    #endif
     #if MICROPY_REPL_EVENT_DRIVEN
     pyexec_event_repl_init();
     for (;;) {
@@ -313,8 +302,7 @@ void SDCARD_Init(void) {
 // Execute bootfile from SD Card
 void SDCARD_boot (void) {
 
-    uint8_t filenum = Do_SD_find_file_by_name("lcdtest@.py@");
-    //uint8_t filenum = Do_SD_find_file_by_name("boot@@@.py@"");
+    uint8_t filenum = Do_SD_find_file_by_name("boot@@@.py@");
 
     if (filenum<40) {
         uint16_t offset=0;
@@ -332,18 +320,12 @@ void SDCARD_boot (void) {
             mp_printf(&mp_plat_print, "Executing bootfile.\n");
             nlr_buf_t nlr;
             if (nlr_push(&nlr) == 0) {
-                mp_printf(&mp_plat_print, "0 ");
                 mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, (char*)source, strlen((char*)source), 0);
-                mp_printf(&mp_plat_print, "1 ");
                 qstr source_name = lex->source_name;
                 mp_parse_tree_t parse_tree = mp_parse(lex, MP_PARSE_FILE_INPUT);
-                mp_printf(&mp_plat_print, "2 ");
                 mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
-                mp_printf(&mp_plat_print, "3 ");
                 mp_call_function_0(module_fun);
-                mp_printf(&mp_plat_print, "4 ");
                 nlr_pop();
-                mp_printf(&mp_plat_print, "5 \n");
             } else {
                 // uncaught exception
                 mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
@@ -383,9 +365,6 @@ void lm4f_init(void) {
 
     #if INIT_SDCARD
     SDCARD_Init();
-    #if INIT_SDCARD_BOOT
-    SDCARD_boot();
-    #endif
     #endif
 
 }

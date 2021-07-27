@@ -972,7 +972,14 @@ long Do_SD_print_filebin(long next_cluster)
 			int c=0;
 			for(c=0;c<512;c++)
 			{
-				mp_printf(&mp_plat_print, "%x", buffer[c]);
+				if(buffer[c]!=0x00)
+				{
+					mp_printf(&mp_plat_print, "%x ", buffer[c]);
+				}
+				else
+				{
+					finish=1;
+				}
 			}
 			sectors_to_be_read--;
 		}while(sectors_to_be_read>0 && finish!=1);

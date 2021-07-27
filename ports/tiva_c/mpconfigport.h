@@ -57,7 +57,7 @@
 // Default behaviour
 #define INIT_SDCARD                 (1)
 #define INIT_SDCARD_SPI_PORT        (3)
-#define INIT_SDCARD_BOOT            (0)     // Currently not usable
+#define INIT_SDCARD_BOOT            (1)     // Currently not usable
 #define INIT_LCD                    (0)
 
 
