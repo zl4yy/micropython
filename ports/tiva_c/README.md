@@ -1,6 +1,6 @@
 # Texas Instruments Tiva C Micropython port (based on minimal port to STM32)
 
-Yannick Devos (ZL4YY), 26 June 2021
+Yannick Devos (ZL4YY), 15 August 2021
 
 This port is intended to be a minimal MicroPython port that actually runs on the Tiva C
 platform. It was developed and tested on the Stellaris Launchpad (EK-LM4F120XL) board but
@@ -26,7 +26,8 @@ This is a minimalist port and only provides:
 - SSI (SPI) communication
 - SD Card reader in SPI mode (Read only)
 - I2C Master (without IRQ)
-- Bosch BMP085 temperature and pressure sessnor
+- Bosch BMP085 temperature and pressure sensor
+- Freescale MMA7455 accelerometer sensor
 
 ADC, I2C slave, DMA or hardware FPU are not supported.
 
@@ -127,7 +128,7 @@ Here are the available Python functions
 	i2c.read(0,0x77)			Read one byte of data from slave 0x77 on port 0
 	i2c.request(0,0x77,0xaa,2)	Send 0xaa and then read two bytes of data from slave 0x77 on port 0
 
-## Bosch BMP085 sensor Support
+## Bosch BMP085 pressure sensor Support
 The BMP085 can be connected via I2C. BMP180 should be supported with only minor modifications but has not been tested. The following functions are supported:
 
 	import bmp085
@@ -135,6 +136,16 @@ The BMP085 can be connected via I2C. BMP180 should be supported with only minor 
 	bmp085.print()				Print temperature and pressure
 	bmp085.get_temp()			Return temperature (in tenth of degrees Celcius)
 	bmp086.get_pressure()		Return pressure (in Pascal)
+
+## FreeScale MMA7455 accelerometer sensor Support
+The MMA7455 can be connected via I2C. Similar sensors should be supported but have not been tested. The following functions are supported:
+	import mma7455
+
+	mma7455.init(0,2)			Initialise MMA7455 on I2C port 0 with 2G sensitivity (other values are 4 and 8)
+	mma7455.print()				Print temperature and pressure
+	mma7455.get_x()				Return G force on x axis (unit???)
+	mma7455.get_y()				Return G force on y axis (unit???)
+	mma7455.get_z()				Return G force on z axis (unit???)
 
 ## Running the Frozen bytecode to test GPIO
 An example of frozen bytecode is provided in gpiotest.py to demonstrate GPIO usage. It

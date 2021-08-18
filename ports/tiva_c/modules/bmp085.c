@@ -12,14 +12,13 @@
 
 #include <stdbool.h>
 #include <float.h>
-//#include "py/objfloat.c"
 #include "modules/time.h"
 #include "modules/i2c.h"
 #include "bmp085.h"
 
 #define SLAVEADDR (0x77)  // Last bit (LSB bit) is read mode
 
-uint8_t _i2cPort = 0;
+uint8_t _i2cPort_bmp085 = 0;
 int16_t ac1;          // Calibration parameters
 int16_t ac2;
 int16_t ac3;
@@ -56,16 +55,16 @@ void bmp085_error_notinitialised () {
 // Initialise the BMP085 and I2C
 bool Do_BMP085_Init(uint8_t port) {
   
-  _i2cPort = port;
+  _i2cPort_bmp085 = port;
   bool err = false;
   uint8_t data[3];
 
   // Initialise MCU hardware
   Do_SysTick_Init();
-  Do_I2C_MasterInit(_i2cPort, 0);   // Low speed I2C only is supported
+  Do_I2C_MasterInit(_i2cPort_bmp085, 0);   // Low speed I2C only is supported
   Do_SysTick_Waitms(5);   // Wait for initialisation
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xd0);  // Chip ID register
-  err |= Do_I2C_MasterRX(_i2cPort, SLAVEADDR, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xd0);  // Chip ID register
+  err |= Do_I2C_MasterRX(_i2cPort_bmp085, SLAVEADDR, data);
   if (data[0] != 0x55) {
 	  mp_printf(&mp_plat_print, "BMP085 not detected.\n");
     err = true;
@@ -76,38 +75,38 @@ bool Do_BMP085_Init(uint8_t port) {
   Do_SysTick_Waitms(5);   // Wait for initialisation
 
   // Read Calibration Data
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xaa);  // AC1 register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xaa);  // AC1 register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   ac1 = (data[0]<<8) | data[1];
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xac);  // AC2 register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xac);  // AC2 register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   ac2 = (data[0]<<8) | data[1];
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xae);  // AC3 register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xae);  // AC3 register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   ac3 = (data[0]<<8) | data[1];
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xb0);  // AC4 register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xb0);  // AC4 register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   ac4 = (data[0]<<8) | data[1];
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xb2);  // AC5 register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xb2);  // AC5 register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   ac5 = (data[0]<<8) | data[1];
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xb4);  // AC6 register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xb4);  // AC6 register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   ac6 = (data[0]<<8) | data[1];
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xb6);  // B1 register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xb6);  // B1 register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   b1 = (data[0]<<8) | data[1];
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xb8);  // B2 register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xb8);  // B2 register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   b2 = (data[0]<<8) | data[1];
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xba);  // mb register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xba);  // mb register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   mb = (data[0]<<8) | data[1];
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xbc);  // mc register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xbc);  // mc register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   mc = (data[0]<<8) | data[1];
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xbe);  // md register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xbe);  // md register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   md = (data[0]<<8) | data[1];
 
   return err;
@@ -121,10 +120,10 @@ bool Do_BMP085_readdata(void) {
 
   data[0] = 0xf4; // Register
   data[1] = 0x2e; // Value to get temperature
-  err |= Do_I2C_MasterTXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   Do_SysTick_Waitms(10);   // Wait for sensor to convert temperature
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xf6);  // Read value register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xf6);  // Read value register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   utemp = (data[0]<<8) | data[1];
   // Do temperature calculations
   int32_t X1 = ((int32_t)utemp - (int32_t)ac6) * ((int32_t)ac5) >> 15;
@@ -134,10 +133,10 @@ bool Do_BMP085_readdata(void) {
 
   data[0] = 0xf4; // Register
   data[1] = 0x34+(oss<<6); // Value to get pressure
-  err |= Do_I2C_MasterTXBurst(_i2cPort, SLAVEADDR, 2, data);
+  err |= Do_I2C_MasterTXBurst(_i2cPort_bmp085, SLAVEADDR, 2, data);
   Do_SysTick_Waitms(30);   // Wait for sensor to convert pressure, maximum conversion time is 25ms
-  err |= Do_I2C_MasterTX(_i2cPort, SLAVEADDR, 0xf6);  // Read value register
-  err |= Do_I2C_MasterRXBurst(_i2cPort, SLAVEADDR, 3, data);
+  err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xf6);  // Read value register
+  err |= Do_I2C_MasterRXBurst(_i2cPort_bmp085, SLAVEADDR, 3, data);
   upressure = ((data[0]<<16) | (data[1]<<8) | data[2]) >> (8-oss);
 
   // Do pressure calculations
@@ -206,7 +205,7 @@ STATIC mp_obj_t bmp085_print() {
       mp_printf(&mp_plat_print, "BMP085 not ready.");
     } else {
       mp_printf(&mp_plat_print, "Temperature: %d.%d deg. C \n", temp/10, temp%10);
-      mp_printf(&mp_plat_print, "Pressure: %d.%d hPa \n", pressure/100, pressure%100);
+      mp_printf(&mp_plat_print, "Pressure: %d.%d%d hPa \n", pressure/100, (pressure%100)/10, pressure%10);
     }
 	}
   return mp_const_none;

@@ -25,11 +25,13 @@ while exit == 0:
 	if pressure < 100000:	
 		lcd.text(0,3,str(pressure//100))
 		lcd.text(6,3,'.')
-		lcd.text(8,3,str((pressure%100)/10))
+		lcd.text(8,3,str((pressure%100)//10))
+		lcd.text(10,3,str(pressure%10))
 	else:
 		lcd.text(0,3,str(pressure//100))
 		lcd.text(8,3,'.')
-		lcd.text(10,3,str((pressure%100)/10))
+		lcd.text(10,3,str((pressure%100)//10))
+		lcd.text(12,3,str(pressure%100))
 	lcd.setfont(0)
 	lcd.text(0,2,'Deg C')
 	lcd.text(0,5,'hPa')

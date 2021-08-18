@@ -7,7 +7,7 @@
 // will still be able to execute pre-compiled scripts, compiled with mpy-cross.
 #define MICROPY_ENABLE_COMPILER     (1)
 
-#define MICROPY_HEAPSIZE            (8192)
+#define MICROPY_HEAPSIZE            (8192)     // 8KB
 #define MICROPY_QSTR_BYTES_IN_HASH  (1)
 #define MICROPY_QSTR_EXTRA_POOL     mp_qstr_frozen_const_pool
 #define MICROPY_ALLOC_PATH_MAX      (256)
@@ -21,6 +21,7 @@
 #define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (0)
 #define MICROPY_PY_ASYNC_AWAIT      (0)
 #define MICROPY_PY_ASSIGN_EXPR      (0)
+#define MICROPY_PY_BUILTINS_EXECFILE        (1)
 #define MICROPY_PY_BUILTINS_BYTEARRAY (0)
 #define MICROPY_PY_BUILTINS_DICT_FROMKEYS (0)
 #define MICROPY_PY_BUILTINS_ENUMERATE (0)
@@ -33,14 +34,14 @@
 #define MICROPY_PY_BUILTINS_STR_COUNT (0)
 #define MICROPY_PY_BUILTINS_STR_OP_MODULO (0)
 #define MICROPY_PY___FILE__         (0)
-#define MICROPY_PY_GC               (0)
+#define MICROPY_PY_GC               (1)
 #define MICROPY_PY_ARRAY            (0)
 #define MICROPY_PY_ATTRTUPLE        (0)
 #define MICROPY_PY_COLLECTIONS      (0)
 #define MICROPY_PY_IO               (0)
 #define MICROPY_PY_STRUCT           (0)
 #define MICROPY_PY_SYS              (0)
-#define MICROPY_MODULE_FROZEN_MPY   (1)
+#define MICROPY_MODULE_FROZEN_MPY   (0)
 #define MICROPY_CPYTHON_COMPAT      (0)
 #define MICROPY_MODULE_GETATTR      (0)
 
@@ -52,13 +53,14 @@
 #define MICROPY_MODULE_LCD5110      (1)
 #define MICROPY_MODULE_SDCARD       (1)
 #define MICROPY_MODULE_BMP085       (1)
+#define MICROPY_MODULE_MMA7455      (1)
 //#define MICROPY_MODULE_DS1307      (1)
 
 // Default behaviour
 #define INIT_SDCARD                 (1)
 #define INIT_SDCARD_SPI_PORT        (3)
-#define INIT_SDCARD_BOOT            (1)     // Currently not usable
-#define INIT_LCD                    (0)
+#define INIT_SDCARD_BOOT            (1)
+#define INIT_LCD5110                (1)
 
 
 // type definitions for the specific machine

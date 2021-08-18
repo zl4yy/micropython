@@ -149,7 +149,7 @@ STATIC mp_obj_t sdcard_readfile(mp_obj_t filenum_obj) {
     } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF && offset < BUFFERSIZE);
 
     if (offset>=BUFFERSIZE) {
-        mp_printf(&mp_plat_print, "File too large.\n");
+        mp_printf(&mp_plat_print, "Buffer size exceeded.\n");
     }
 
     return mp_obj_new_str((char*)source,strlen((char*)source));
@@ -171,21 +171,21 @@ STATIC mp_obj_t sdcard_execfile(mp_obj_t filenum_obj) {
     } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF && offset < BUFFERSIZE);
 
     if (offset>=BUFFERSIZE) {
-        mp_printf(&mp_plat_print, "File too large.\n");
-    } else {
-        nlr_buf_t nlr;
-        if (nlr_push(&nlr) == 0) {
-            mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, (char*)source, strlen((char*)source), 0);
-            qstr source_name = lex->source_name;
-            mp_parse_tree_t parse_tree = mp_parse(lex, MP_PARSE_FILE_INPUT);
-            mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
-            mp_call_function_0(module_fun);
-            nlr_pop();
-        } else {
-            // uncaught exception
-            mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
-        }
+        mp_printf(&mp_plat_print, "Buffer size exceeded.\n");
     };
+
+    nlr_buf_t nlr;
+    if (nlr_push(&nlr) == 0) {
+        mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, (char*)source, strlen((char*)source), 0);
+        qstr source_name = lex->source_name;
+        mp_parse_tree_t parse_tree = mp_parse(lex, MP_PARSE_FILE_INPUT);
+        mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
+        mp_call_function_0(module_fun);
+        nlr_pop();
+    } else {
+        // uncaught exception
+        mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
+    }
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(sdcard_execfile_obj, sdcard_execfile);
@@ -211,21 +211,21 @@ STATIC mp_obj_t sdcard_execfilebyname(const mp_obj_t filename_obj) {
         } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF && offset < BUFFERSIZE);
 
         if (offset>=BUFFERSIZE) {
-            mp_printf(&mp_plat_print, "File too large.\n");
-        } else {
-            nlr_buf_t nlr;
-            if (nlr_push(&nlr) == 0) {
-                mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, (char*)source, strlen((char*)source), 0);
-                qstr source_name = lex->source_name;
-                mp_parse_tree_t parse_tree = mp_parse(lex, MP_PARSE_FILE_INPUT);
-                mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
-                mp_call_function_0(module_fun);
-                nlr_pop();
-            } else {
-                // uncaught exception
-                mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
-            }
+            mp_printf(&mp_plat_print, "Buffer size exceeded.\n");
         };
+
+        nlr_buf_t nlr;
+        if (nlr_push(&nlr) == 0) {
+            mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, (char*)source, strlen((char*)source), 0);
+            qstr source_name = lex->source_name;
+            mp_parse_tree_t parse_tree = mp_parse(lex, MP_PARSE_FILE_INPUT);
+            mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
+            mp_call_function_0(module_fun);
+            nlr_pop();
+        } else {
+            // uncaught exception
+            mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
+        }
     } else {
         mp_printf(&mp_plat_print, "File not found.\n");
     }

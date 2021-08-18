@@ -33,7 +33,7 @@
 #include "modules/time.h"
 #include "modules/gpio.h"
 
-#define BUFFERSIZE 4096		// Size of buffer to read files (eg 4KB), printing file as no size limit
+#define BUFFERSIZE 4096		// Size of buffer to read files (eg 4KB), printing file has no size limit
 
 /* Definitions for MMC/SDC commands */
 #define CMD0     0x40    	/* GO_IDLE_STATE */

@@ -32,6 +32,10 @@
 void SDCARD_boot (void);    // Declaration only
 # endif
 
+#ifdef INIT_LCD5110
+#include "modules/lcd5110.h"
+# endif
+
 static char *stack_top;
 #if MICROPY_ENABLE_GC
 static char heap[MICROPY_HEAPSIZE];
@@ -302,7 +306,7 @@ void SDCARD_Init(void) {
 // Execute bootfile from SD Card
 void SDCARD_boot (void) {
 
-    uint8_t filenum = Do_SD_find_file_by_name("boot@@@.py@");
+    uint8_t filenum = Do_SD_find_file_by_name("boot@@@@.py@");
 
     if (filenum<40) {
         uint16_t offset=0;
@@ -365,6 +369,10 @@ void lm4f_init(void) {
 
     #if INIT_SDCARD
     SDCARD_Init();
+    #endif
+
+    #if INIT_LCD5110
+    Do_LCD_Init();
     #endif
 
 }

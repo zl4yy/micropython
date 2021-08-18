@@ -28,7 +28,6 @@ MCUTARGET = -DTARGET_IS_TM4C123_RA3 -DPART_LM4F120H5QR #Forcing target for lm4f_
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -msoft-float -fsingle-precision-constant -Wdouble-promotion -Wfloat-conversion
 CFLAGS = $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) $(MCUTARGET)
 
-#LDFLAGS = -nostdlib -T boards/stm32f405.ld -Map=$@.map --cref --gc-sections
 LDFLAGS = -nostdlib -T boards/lm4f120xl.ld -Map=$@.map --cref --gc-sections
 else
 LD = gcc
@@ -54,7 +53,6 @@ SRC_C = \
 	shared/runtime/stdout_helpers.c \
 	shared/runtime/pyexec.c \
 	shared/readline/readline.c \
-	$(BUILD)/_gpiotest_mpy.c \
 	modules/gpio.c \
 	modules/time.c \
 	modules/ssi.c \
@@ -63,11 +61,17 @@ SRC_C = \
 	modules/sdcard_mod.c \
 	modules/i2c.c \
 	modules/bmp085.c \
+	modules/mma7455.c \
 #	modules/ds1307.c \
 
 ifeq ($(CROSS), 1)
 SRC_C += shared/libc/string0.c
 endif
+
+# Frozen MPY code
+SRC_C += \
+	$(BUILD)/_gpiotest_mpy.c \
+
 
 SRC_QSTR += modules/gpio.c
 SRC_QSTR += modules/time.c 
@@ -76,6 +80,7 @@ SRC_QSTR += modules/ssi.c
 SRC_QSTR += modules/sdcard_mod.c 
 SRC_QSTR += modules/i2c.c 
 SRC_QSTR += modules/bmp085.c 
+SRC_QSTR += modules/mma7455.c 
 #SRC_QSTR += modules/ds1307.c 
 
 OBJ = $(PY_CORE_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
@@ -86,10 +91,9 @@ else
 all: $(BUILD)/firmware.elf
 endif
 
-$(BUILD)/_gpiotest_mpy.c: gpiotest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
+$(BUILD)/_gpiotest_mpy.c: code_py/gpiotest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
 	$(ECHO) "Freezing GPIO test bytecode"
 	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
-
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(ECHO) "LINK $@"
@@ -103,16 +107,15 @@ $(BUILD)/firmware.dfu: $(BUILD)/firmware.bin
 	$(ECHO) "Create $@"
 	$(Q)$(PYTHON) $(DFU) -b 0x08000000:$(BUILD)/firmware.bin $@
 
-deploy: $(BUILD)/firmware.dfu
+deploy: $(BUILD)/firmware.elf
 	$(ECHO) "Writing $< to the board"
 #	$(Q)$(PYTHON) $(PYDFU) -u $<
 	FlashTiva build/firmware.elf
 	
-# Run emulation build on a POSIX system with suitable terminal settings
+# Run on target MCU
 run:
-	stty raw opost -echo
-	build/firmware.elf
-	@echo Resetting terminal...
+	@echo Connecting to UART terminal...
+	screen /dev/cu.usbmodem0E104ED61
 # This sleep is useful to spot segfaults
 	sleep 1
 	reset
