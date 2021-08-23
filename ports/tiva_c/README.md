@@ -139,13 +139,27 @@ The BMP085 can be connected via I2C. BMP180 should be supported with only minor 
 
 ## FreeScale MMA7455 accelerometer sensor Support
 The MMA7455 can be connected via I2C. Similar sensors should be supported but have not been tested. The following functions are supported:
+	
 	import mma7455
-
 	mma7455.init(0,2)			Initialise MMA7455 on I2C port 0 with 2G sensitivity (other values are 4 and 8)
 	mma7455.print()				Print temperature and pressure
 	mma7455.get_x()				Return G force on x axis (unit???)
 	mma7455.get_y()				Return G force on y axis (unit???)
 	mma7455.get_z()				Return G force on z axis (unit???)
+
+## Compute and display Mandelbrot set
+Uses the FPU unit of the micro controller to compute and display the Mandelbrot set.
+Currently display only works to the UART (serial) and LCD Nokia 5110.
+Parameters are:
+	- x start and stop for region (integer only)
+	- y start and stop for region (integer only)
+	- maximum number of iterations (Numbers higher that 200 can exhaust memory)
+	- x resolution (fixed for LCD to 84)
+	
+	import fractals
+	fractals.print_mandel(-2,1,-1,1,40,100)
+	fractals.print_mandel(-1,0,0,1,40,100)
+	fractals.plot_mandel(-1,0,0,1,40)
 
 ## Running the Frozen bytecode to test GPIO
 An example of frozen bytecode is provided in gpiotest.py to demonstrate GPIO usage. It

@@ -364,6 +364,10 @@ void lm4f_init(void) {
     // Set the clocking to run directly from the crystal.
     ROM_SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
 
+    // Enable the FPU
+    ROM_FPUEnable();
+    ROM_FPULazyStackingEnable();
+
     // Initialise the hardware
     UART_Init0();
 

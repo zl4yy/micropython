@@ -25,13 +25,15 @@ ifeq ($(CROSS), 1)
 DFU = $(TOP)/tools/dfu.py
 PYDFU = $(TOP)/tools/pydfu.py
 MCUTARGET = -DTARGET_IS_TM4C123_RA3 -DPART_LM4F120H5QR #Forcing target for lm4f_rom.h and lm4f_pin_map.h
-CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -msoft-float -fsingle-precision-constant -Wdouble-promotion -Wfloat-conversion
+CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mcpu=cortex-m4 -fsingle-precision-constant -Wdouble-promotion -Wfloat-conversion -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 CFLAGS = $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT) $(MCUTARGET)
 
 LDFLAGS = -nostdlib -T boards/lm4f120xl.ld -Map=$@.map --cref --gc-sections
 else
 LD = gcc
 CFLAGS = -m32 $(INC) -Wall -Werror -Wdouble-promotion -Wfloat-conversion -std=c99 $(COPT)
+CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_FLOAT
+CFLAGS += -fsingle-precision-constant
 LDFLAGS = -m32 -Wl,-Map=$@.map,--cref -Wl,--gc-sections
 endif
 
@@ -62,6 +64,7 @@ SRC_C = \
 	modules/i2c.c \
 	modules/bmp085.c \
 	modules/mma7455.c \
+	modules/fractals.c \
 #	modules/ds1307.c \
 
 ifeq ($(CROSS), 1)
@@ -82,6 +85,7 @@ SRC_QSTR += modules/i2c.c
 SRC_QSTR += modules/bmp085.c 
 SRC_QSTR += modules/mma7455.c 
 #SRC_QSTR += modules/ds1307.c 
+SRC_QSTR += modules/fractals.c 
 
 OBJ = $(PY_CORE_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 

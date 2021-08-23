@@ -217,7 +217,7 @@ void Do_LCD_plot(uint8_t x, uint8_t y) {
   // Add one dot to a memory position in the framebuffer and send it to the PCD8544
   // x and y are actual dots on the screen, not memory lines
 
-  if (x < MAX_Y && y < MAX_Y) {
+  if (x < MAX_X && y < MAX_Y) {
     FrameBuffer[x][y/8] |= 0x01 << (y%8);
     Do_LCD_setXY(x,y/8);
     Do_LCD_write(DATALCD, FrameBuffer[x][y/8]);

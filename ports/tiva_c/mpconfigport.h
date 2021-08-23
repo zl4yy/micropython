@@ -52,9 +52,12 @@
 #define MICROPY_MODULE_I2C          (1)
 #define MICROPY_MODULE_LCD5110      (1)
 #define MICROPY_MODULE_SDCARD       (1)
-#define MICROPY_MODULE_BMP085       (1)
-#define MICROPY_MODULE_MMA7455      (1)
+#define MICROPY_MODULE_BMP085       (0)
+#define MICROPY_MODULE_MMA7455      (0)
 //#define MICROPY_MODULE_DS1307      (1)
+
+// Miscellaneous modules
+#define MICROPY_MODULE_FRACTALS     (1)
 
 // Default behaviour
 #define INIT_SDCARD                 (1)
