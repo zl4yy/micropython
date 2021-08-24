@@ -183,7 +183,11 @@ void Do_LCD_setInverseVideo(bool iv) {
 
 void Do_LCD_setFont(uint8_t font) {
   // Set font to use (see Header files and QSTR for details, 0 or 1 are two numerical values accepted)
-  _font = font;
+  if (font==1) {
+    _font = 1;
+  } else {
+    _font = 0;
+  }
 }
 
 void Do_LCD_text(uint8_t x, uint8_t y, char* s) {
@@ -197,8 +201,7 @@ void Do_LCD_text(uint8_t x, uint8_t y, char* s) {
       for (i=0; i<5; i++) Do_LCD_write(DATALCD, Terminal6x8[((uint8_t)s[j]-0x20)][i]);
       Do_LCD_write(DATALCD, 0x00); // Add one space between characters
     } 
-  } 
-  else if (_font==1) { 
+  } else if (_font==1) { 
     Do_LCD_setXY(6*x, y);
     for (j=0; j<strlen(s); j++) {
       for (i=0; i<11; i++) Do_LCD_write(DATALCD, Terminal11x16[((uint8_t)s[j]-0x20)][2*i]);

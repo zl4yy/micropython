@@ -377,6 +377,11 @@ void lm4f_init(void) {
 
     #if INIT_LCD5110
     Do_LCD_Init();
+    Do_LCD_setFont(1);
+    Do_LCD_text(0,0,"Tiva C");
+    Do_LCD_setFont(0);
+    Do_LCD_text(0,2,"MicroPython");
+    Do_LCD_text(0,3,"Ready");
     #endif
 
 }

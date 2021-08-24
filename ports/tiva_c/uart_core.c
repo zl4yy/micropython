@@ -37,8 +37,7 @@ typedef struct {
 void UART_OutChar(char data){
   while((UART0_FR_R&UART_FR_TXFF) != 0);
   UART0_DR_R = data;
-}
-
+};
 #endif
 
 
@@ -51,15 +50,14 @@ int mp_hal_stdin_rx_chr(void) {
     (void)r;
     #elif MICROPY_MIN_USE_STM32_MCU
     // wait for RXNE
-    while ((USART1->SR & (1 << 5)) == 0) {
-    }
+    while ((USART1->SR & (1 << 5)) == 0) {};
     c = USART1->DR;
     #elif MICROPY_MIN_USE_LM4F_MCU
-    while((UART0_FR_R&UART_FR_RXFE) != 0);
+    while((UART0_FR_R&UART_FR_RXFE) != 0) {};
     c = (char)(UART0_DR_R&0xFF);
     #endif
     return c;
-}
+};
 
 // Send string of given length
 void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
@@ -69,14 +67,12 @@ void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
     #elif MICROPY_MIN_USE_STM32_MCU
     while (len--) {
         // wait for TXE
-        while ((USART1->SR & (1 << 7)) == 0) {
-        }
+        while ((USART1->SR & (1 << 7)) == 0) {};
         USART1->DR = *str++;
-    }
+    };
     #elif MICROPY_MIN_USE_LM4F_MCU
     while (len--) {
         UART_OutChar(*str++);
-    }
- 
+    };
     #endif
-}
+};

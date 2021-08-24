@@ -57,7 +57,7 @@ Example usage:
 Pins are encoded by Port and Pin number. Ex: PC5 is 35 (Port C =3 and pin 5), PA2 is 12, PE7 is 57...
 
 ## LCD 5110 Control (PD8544)
-Example usage:
+Interfacing settings (hard or soft SPI, pins) need to be set in the source code. Example usage:
 
 	import lcd
 	lcd.init()
@@ -149,17 +149,41 @@ The MMA7455 can be connected via I2C. Similar sensors should be supported but ha
 
 ## Compute and display Mandelbrot set
 Uses the FPU unit of the micro controller to compute and display the Mandelbrot set.
-Currently display only works to the UART (serial) and LCD Nokia 5110.
-Parameters are:
+Currently display only works to the UART (serial) and LCD Nokia 5110. Output settings can be
+changed in the source code.
+Parameters for the tracing functions print_mandel and plot_mandel are:
 	- x start and stop for region (integer only)
 	- y start and stop for region (integer only)
-	- maximum number of iterations (Numbers higher that 200 can exhaust memory)
-	- x resolution (fixed for LCD to 84)
+	- maximum number of iterations (Numbers higher that 5000 use significant compute time)
+	- x resolution (fixed with plot_mandel for LCD to 84)
 	
 	import fractals
 	fractals.print_mandel(-2,1,-1,1,40,100)
 	fractals.print_mandel(-1,0,0,1,40,100)
 	fractals.plot_mandel(-1,0,0,1,40)
+
+Only integers can be used as inputs for the above functions, but a separate functions can make them
+act as fractions, with the parameters then being the denominators. If calling again the tracing functions,
+this can be used as a "zoom" function:
+
+	fractals.print_mandel(-2,1,-1,1,40,100)
+	fractals.set_denominators(2,2,2,2)
+	fractals.print_mandel()
+
+Setting precise regions of the fractal set to draw will require some skillfull computations to give the
+right values.
+	fractals.set_denominators(3,22,5,4)
+	fractals.plot_mandel(1,10,1,1,100)
+
+	fractals.set_denominators(3,23,5,4)
+	fractals.plot_mandel(1,9,-1,-1,100)
+
+	fractals.set_denominators(30,22,46,41)
+	fractals.plot_mandel(11,9,-10,-10,100)
+
+	fractals.set_denominators(3,26,11,9)
+	fractals.plot_mandel(1,11,-2,-2,100)
+
 
 ## Running the Frozen bytecode to test GPIO
 An example of frozen bytecode is provided in gpiotest.py to demonstrate GPIO usage. It
