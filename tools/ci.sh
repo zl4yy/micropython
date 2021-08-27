@@ -189,6 +189,7 @@ function ci_nrf_setup {
 
 function ci_nrf_build {
     ports/nrf/drivers/bluetooth/download_ble_stack.sh s140_nrf52_6_1_1
+    make ${MAKEOPTS} -C mpy-cross
     make ${MAKEOPTS} -C ports/nrf submodules
     make ${MAKEOPTS} -C ports/nrf BOARD=pca10040
     make ${MAKEOPTS} -C ports/nrf BOARD=microbit
@@ -267,6 +268,7 @@ function ci_stm32_pyb_build {
     make ${MAKEOPTS} -C mpy-cross
     make ${MAKEOPTS} -C ports/stm32 submodules
     git submodule update --init lib/btstack
+    git submodule update --init lib/mynewt-nimble
     make ${MAKEOPTS} -C ports/stm32 BOARD=PYBV11 MICROPY_PY_WIZNET5K=5200 MICROPY_PY_CC3K=1 USER_C_MODULES=../../examples/usercmodule
     make ${MAKEOPTS} -C ports/stm32 BOARD=PYBD_SF2
     make ${MAKEOPTS} -C ports/stm32 BOARD=PYBD_SF6 NANBOX=1 MICROPY_BLUETOOTH_NIMBLE=0 MICROPY_BLUETOOTH_BTSTACK=1
@@ -277,6 +279,7 @@ function ci_stm32_pyb_build {
 function ci_stm32_nucleo_build {
     make ${MAKEOPTS} -C mpy-cross
     make ${MAKEOPTS} -C ports/stm32 submodules
+    git submodule update --init lib/mynewt-nimble
     make ${MAKEOPTS} -C ports/stm32 BOARD=NUCLEO_F091RC
     make ${MAKEOPTS} -C ports/stm32 BOARD=NUCLEO_H743ZI CFLAGS_EXTRA='-DMICROPY_PY_THREAD=1'
     make ${MAKEOPTS} -C ports/stm32 BOARD=NUCLEO_L073RZ
