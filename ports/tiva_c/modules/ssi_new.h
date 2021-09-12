@@ -18,11 +18,6 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/builtin.h"
-#include "boards/lm4f_rom.h"
-#include "boards/lm4f_sysctl.h"
-#include "boards/lm4f_registers.h"
-#include "boards/lm4f_pin_map.h"
-#include "boards/hw_memmap.h"
 
 
 //*****************************************************************************
@@ -78,6 +73,9 @@
 // Initialise registers for SSI
 void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg, bool sdcard);
 
+// Perform fast configuration change without complete reinitisalisation
+uint16_t Do_SSI_FastConfig(uint8_t ssinum, uint16_t ssicfg);
+
 // Disable SSI
 void Do_SSI_Disable(uint8_t ssinum);
 
@@ -91,10 +89,10 @@ void Do_SSI_TX(uint8_t ssinum, uint32_t word);
 void Do_SSI_TX_FIFO(uint8_t ssinum, uint32_t word);
 
 // Send 2 words data via SSI using the FIFO (non blocking)
-void Do_SSI_TX16_FIFO(uint8_t ssinum, uint32_t word, bool lsb);
+void Do_SSI_TX16_FIFO(uint8_t ssinum, uint16_t word, bool lsb);
 
 // Send 2 words data via SSI (blocking)
-void Do_SSI_TX16(uint8_t ssinum, uint32_t word, bool lsb);
+void Do_SSI_TX16(uint8_t ssinum, uint16_t word, bool lsb);
 
 // Check if SSI port is still sending data
 bool Do_SSI_Busy(uint8_t ssinum);

@@ -129,16 +129,6 @@ STATIC mp_obj_t time_info(void) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(time_info_obj, time_info);
 
-// Initialise registers for SysTick
-STATIC mp_obj_t time_init(void) {
-
-    Do_SysTick_Init();
-	mp_printf(&mp_plat_print, "Time initialised.\n");
-
-    return mp_const_none;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(time_init_obj, time_init);
-
 // Delay per milli seconds
 STATIC mp_obj_t time_sleep_ms(mp_obj_t delay_obj) {
     uint32_t delay = mp_obj_get_int(delay_obj);
@@ -196,7 +186,6 @@ STATIC const mp_rom_map_elem_t time_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_sleep_us), MP_ROM_PTR(&time_sleep_us_obj) },
     { MP_ROM_QSTR(MP_QSTR_ticks_ms), MP_ROM_PTR(&time_ticks_ms_obj) },
     { MP_ROM_QSTR(MP_QSTR_ticks_diff), MP_ROM_PTR(&time_ticks_diff_obj) },
-    { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&time_init_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(time_module_globals, time_module_globals_table);
 

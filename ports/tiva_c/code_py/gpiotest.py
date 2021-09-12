@@ -27,7 +27,6 @@ while exit == 0:
 		gpio.down(gpio.blue)
 print('Blinking loop')
 import time
-time.init()
 exit = 0
 time.sleep_ms(500)
 while exit == 0:

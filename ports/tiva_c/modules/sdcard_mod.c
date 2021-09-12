@@ -20,8 +20,6 @@
 //#include "py/mperrno.h"
 //#include "lib/utils/pyexec.h"
 
-bool SDCard_InitDone = false;
-
 /*
 
     MicroPython Wrappers
@@ -39,7 +37,6 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(sdcard_info_obj, sdcard_info);
 STATIC mp_obj_t sdcard_init(mp_obj_t ssinum_obj) {
     uint8_t ssinum = mp_obj_get_int(ssinum_obj);
 
-    Do_SysTick_Init();
     Do_SD_SetPins(ssinum);
 
     // Using SSI 3 Master, SPI frame format, 250 Kbps, 8 data bits
@@ -73,10 +70,11 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(sdcard_init_obj, sdcard_init);
 STATIC mp_obj_t sdcard_listdir(void) {
     long next_cluster=Do_SD_get_root_dir_first_cluster();
 
-    do {
-            next_cluster=Do_SD_get_files_and_dirs(next_cluster, LONG_NAME, GET_SUBDIRS, true);
-    } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF);
-
+    if (next_cluster!=0) {
+        do {
+                next_cluster=Do_SD_get_files_and_dirs(next_cluster, LONG_NAME, GET_SUBDIRS, true);
+        } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF);
+    }
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(sdcard_listdir_obj, sdcard_listdir);
@@ -88,9 +86,11 @@ STATIC mp_obj_t sdcard_printfile(mp_obj_t filenum_obj) {
 
     long next_cluster=Do_SD_get_first_cluster(filenum);
     
-    do {
-        next_cluster=Do_SD_print_file(next_cluster);
-    } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF);
+    if (next_cluster!=0) {
+        do {
+            next_cluster=Do_SD_print_file(next_cluster);
+        } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF);
+    }
 
     return mp_const_none;
 }
@@ -103,10 +103,12 @@ STATIC mp_obj_t sdcard_printfilebin(mp_obj_t filenum_obj) {
 
     long next_cluster=Do_SD_get_first_cluster(filenum);
     
-    do {
-        next_cluster=Do_SD_print_filebin(next_cluster);
-    } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF);
-
+    if (next_cluster!=0) {
+        do {
+            next_cluster=Do_SD_print_filebin(next_cluster);
+        } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF);
+    }
+    
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(sdcard_printfilebin_obj, sdcard_printfilebin);
@@ -144,9 +146,11 @@ STATIC mp_obj_t sdcard_readfile(mp_obj_t filenum_obj) {
 
     long next_cluster=Do_SD_get_first_cluster(filenum);
 
-    do {
-        next_cluster=Do_SD_read_file(next_cluster, &source[offset], &offset);
-    } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF && offset < BUFFERSIZE);
+    if (next_cluster!=0) {
+        do {
+            next_cluster=Do_SD_read_file(next_cluster, &source[offset], &offset);
+        } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF && offset < BUFFERSIZE);
+    }
 
     if (offset>=BUFFERSIZE) {
         mp_printf(&mp_plat_print, "Buffer size exceeded.\n");
@@ -166,9 +170,11 @@ STATIC mp_obj_t sdcard_execfile(mp_obj_t filenum_obj) {
 
     long next_cluster=Do_SD_get_first_cluster(filenum);
 
-    do {
-        next_cluster=Do_SD_read_file(next_cluster, &source[offset], &offset);
-    } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF && offset < BUFFERSIZE);
+    if (next_cluster!=0) {
+        do {
+            next_cluster=Do_SD_read_file(next_cluster, &source[offset], &offset);
+        } while (next_cluster!=0x0FFFFFFF && next_cluster!=0xFFFFFFFF && offset < BUFFERSIZE);
+    }
 
     if (offset>=BUFFERSIZE) {
         mp_printf(&mp_plat_print, "Buffer size exceeded.\n");

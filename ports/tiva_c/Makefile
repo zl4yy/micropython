@@ -59,6 +59,8 @@ SRC_C = \
 	modules/time.c \
 	modules/ssi.c \
 	modules/lcd5110.c \
+	modules/lcd_ili9486.c \
+	modules/xpt2046.c \
 	modules/sdcard.c \
 	modules/sdcard_mod.c \
 	modules/i2c.c \
@@ -79,6 +81,8 @@ SRC_C += \
 SRC_QSTR += modules/gpio.c
 SRC_QSTR += modules/time.c 
 SRC_QSTR += modules/lcd5110.c 
+SRC_QSTR += modules/lcd_ili9486.c 
+SRC_QSTR += modules/xpt2046.c 
 SRC_QSTR += modules/ssi.c 
 SRC_QSTR += modules/sdcard_mod.c 
 SRC_QSTR += modules/i2c.c 

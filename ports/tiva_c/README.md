@@ -23,6 +23,8 @@ This is a minimalist port and only provides:
 - Onboard GPIO control
 - Time and delay using SysTick
 - Nokia 5110 LCD clones (PD8544 based)
+- ILI9486 and ILI9488 based TFT LCDs (WIP)
+- XPT2046 based touchscreen (Experimental)
 - SSI (SPI) communication
 - SD Card reader in SPI mode (Read only)
 - I2C Master (without IRQ)
@@ -32,17 +34,20 @@ This is a minimalist port and only provides:
 ADC, I2C slave, DMA or hardware FPU are not supported.
 
 ## Time and delay
+SysTick support, initialised by default.
 Example usage:
 
 	import time
-	time.init()
 	time.sleep(2)
 	time.sleep_ms(1000)
 	time.sleep_us(100)
 	start = time.ticks_ms() # get value of millisecond counter
 	delta = time.ticks_diff(time.ticks_ms(), start) # compute time difference
 
-## Onboard LED control
+
+## GPIO and onboard LED and switch control
+GPIO pin basic support with aliases for onboard LED and switches.
+Pins are encoded by Port and Pin number. Ex: PC5 is 35 (Port C =3 and pin 5), PA2 is 12, PE7 is 57...
 Example usage:
 
 	import gpio
@@ -54,7 +59,6 @@ Example usage:
 	gpio.input(gpio.sw1)
 	gpio.read(gpio.sw1)
 
-Pins are encoded by Port and Pin number. Ex: PC5 is 35 (Port C =3 and pin 5), PA2 is 12, PE7 is 57...
 
 ## LCD 5110 Control (PD8544)
 Interfacing settings (hard or soft SPI, pins) need to be set in the source code. Example usage:
@@ -80,7 +84,41 @@ Interfacing settings (hard or soft SPI, pins) need to be set in the source code.
 
 Font can be lcd.small or lcd.large and lcd.write first's parameter is either lcd.data or lcd.cmnd.
 NOTE: The PD8544 chip must be initialised very shortly after power up or it does not work properly.
+Initialisation at boot time is configurable in mpconfigport.h.
 You may need to start the MCU first and apply power to the LCD only before the lcd.init().
+
+
+## TFT based on ILI9486/88 (WIP)
+There is a functional but limited support for ILI9486 and ILI9488 based TFT panels. Text or advanced drawing
+is not yet implemented. This has not been tested on ILI9486 but works on ILI9488.
+The parameters for init are spi port, pin for ChipSelect, pin for DataCommand and pin for Reset.
+Fast drawing is possible using C code in your modules (look at the Fractals module for examples).
+
+	tft.init(0, 34, 35, 36)
+	tft.clear(<colour>)
+	tft.setOrientation(0)
+	tft.fill(<x>,<y>,<w>,<h>,<colour>)
+	tft.plot(<x>,<y>,<colour>)
+	tft.get565colour(40,70,128)
+	lcd.write(1,0x01)
+
+The first parameter of write is 0 for data, 1 for command to be sent to the LCD.
+Colours are 565 packed. The get565colour takes 8-bit R G B values and returns 16-bit 565 values.
+
+## Touchscreen based on XPT2046 (Experimental)
+There is an experimentatl support for XPT2046 chips. It works but still returns unpredictable results.
+The parameters for init are spi port and pin for ChipSelect.
+
+	xpt2046.init(0,37)
+	xpt2046.setOrientation(3)
+	xpt2046.setTreshold(300)
+	xpt2046.printRaw()
+	xpt2046.getZ()
+	xpt2046.getX()
+	xpt2046.getY()
+
+Only getZ and printRaw actually do an updated with the chip. getX and getY only return previously obtained values.
+
 
 ## SSI Support
 Example usage:
@@ -88,7 +126,7 @@ Example usage:
 	import ssi
 	ssi.init(0,10041)
 	ssi.write_fifo(0,0x21)
-	while(sss.isbusy(0)) {};
+	print(ssi.isbusy(0))
 	ssi.write(0,0xFF)
 
 NOTE: 4 SSI ports are available but SSI 1 may conflict with LaunchPad LED and switch hardware.
@@ -98,7 +136,7 @@ The first value of the init command is the SSI port, second is configuration und
 	- F is Frame Format with 0/1/2/3 being Freescale frame format, 4 is Microwire, 5 is TI SFF
 	- B is bitrate with 0 = 250Kbps, 1 = 500 Kbps, 2 = 1 Mbps, 3 = 2 Mbps, 4 = 4 Mbps, 5 = 8 Mbps,
 		6 = 12 Mbps, 7 = 16 Mbps, 8 = 20 Mbps, 9 = 25 Mbps (C =2 required above 8 Mbps)
-	- D is data size (0 = 4, 1 = 8, 2 = 16, 3 = 32)
+	- D is data size (0 = 4, 1 = 8, 2 = 16)
 If configuration is incorrect,  default is SPI Master Motorola/Freescale mode SPO=0 SPH=0, MSBFIRST, 8 Mbps. DMA operation is not available.
 All other commands take port number as first value.
 

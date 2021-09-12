@@ -102,6 +102,13 @@ typedef struct
 
 tfile_dir file_dir[40];
 
+bool SDCard_InitDone = false;
+
+
+void sdcard_error_notinitialised () {
+  // Send generic error
+	  mp_printf(&mp_plat_print, "SD Card not initialised.\n");
+}
 
 /**
  * Set Pins and SSI port
@@ -265,7 +272,6 @@ bool Do_SD_initialise()
 	uint8_t sd_type;
 	bool resetsuccess = false;
 
-	Do_SysTick_Init();
 	Do_GPIO_Init();
 	Do_GPIO_output(_cspin);
 	//Sends a 1 through CS and MOSI lines for at least 74 clock cycles
@@ -339,6 +345,8 @@ bool Do_SD_initialise()
 				sd_type=0;
 			}
 		}
+		SDCard_InitDone = true;
+
 		return true;
 	}
 	else {
@@ -374,6 +382,12 @@ void Do_SD_dummy_clock()
  */
 long Do_SD_get_first_cluster(int pos)
 {
+	// If SD Card not initialise, do not proceed further and throw an error
+	if (!SDCard_InitDone) {
+		sdcard_error_notinitialised();
+		return 0;
+	}
+
 	return file_dir[pos].name.info.first_cluster;
 }
 
@@ -382,6 +396,12 @@ long Do_SD_get_first_cluster(int pos)
  */
 long Do_SD_get_root_dir_first_cluster(void)
 {
+	// If SD Card not initialise, do not proceed further and throw an error
+	if (!SDCard_InitDone) {
+		sdcard_error_notinitialised();
+		return 0;
+	}
+
 	return root_dir_first_cluster;
 }
 
@@ -518,8 +538,14 @@ void Do_SD_read_disk_data()
 /*
  * List directories and files using the long name (if it has) or the short name, listing subdirectories as well if asked by the user
  */
-long Do_SD_get_files_and_dirs(long next_cluster,enum name_type name, enum get_subdirs subdirs, bool printout)
-{
+long Do_SD_get_files_and_dirs(long next_cluster,enum name_type name, enum get_subdirs subdirs, bool printout) {
+
+	// If SD Card not initialise, do not proceed further and throw an error
+	if (!SDCard_InitDone) {
+		sdcard_error_notinitialised();
+		return 0;
+	}
+
 	uint8_t buffer[512];
     uint8_t filename[255] = "";
 	int position=0,filename_position=0;
@@ -892,8 +918,13 @@ long Do_SD_get_files_and_dirs(long next_cluster,enum name_type name, enum get_su
  *Print file content.
  *Please note that this method should be modified if the file to be opened is not a txt file (concretely the content inside the for loop)
  */
-long Do_SD_print_file(long next_cluster)
-{
+long Do_SD_print_file(long next_cluster) {
+
+	// If SD Card not initialise, do not proceed further and throw an error
+	if (!SDCard_InitDone) {
+		sdcard_error_notinitialised();
+		return 0;
+	}
 
 	uint8_t buffer[512];
 	long sector=0;
@@ -945,8 +976,12 @@ long Do_SD_print_file(long next_cluster)
  *Print file content.
  *Please note that this method should be modified if the file to be opened is not a txt file (concretely the content inside the for loop)
  */
-long Do_SD_print_filebin(long next_cluster)
-{
+long Do_SD_print_filebin(long next_cluster) {
+	// If SD Card not initialise, do not proceed further and throw an error
+	if (!SDCard_InitDone) {
+		sdcard_error_notinitialised();
+		return 0;
+	}
 
 	uint8_t buffer[512];
 	long sector=0;
@@ -999,6 +1034,11 @@ long Do_SD_print_filebin(long next_cluster)
  */
 
 long Do_SD_read_file(long next_cluster, uint8_t *buffer, uint16_t *offset) {
+	// If SD Card not initialise, do not proceed further and throw an error
+	if (!SDCard_InitDone) {
+		sdcard_error_notinitialised();
+		return 0;
+	}
 
 	// We need to use the offset so we keep same position in buffer even if jumping to next cluster
 

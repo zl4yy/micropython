@@ -32,8 +32,16 @@
 void SDCARD_boot (void);    // Declaration only
 # endif
 
-#ifdef INIT_LCD5110
+#if INIT_LCD
+#if MICROPY_MODULE_LCD5110
 #include "modules/lcd5110.h"
+# endif
+#if MICROPY_MODULE_LCD_ILI9486
+#include "modules/lcd_ili9486.h"
+# endif
+#if MICROPY_MODULE_XPT2046
+#include "modules/xpt2046.h"
+# endif
 # endif
 
 static char *stack_top;
@@ -268,7 +276,6 @@ void UART_Init0(void){
 #if INIT_SDCARD
 // SD Card Init
 void SDCARD_Init(void) {
-    Do_SysTick_Init();
 	Do_SysTick_Waitms(100);
     Do_SD_SetPins(INIT_SDCARD_SPI_PORT);
 
@@ -370,18 +377,33 @@ void lm4f_init(void) {
 
     // Initialise the hardware
     UART_Init0();
+    Do_SysTick_Init();
+
+    // Initialise the uDMA
+    //ROM_uDMAEnable();
+    //ROM_uDMAControlBaseSet(UDMA_CTLBASE_ADDR_M);
+    // To do
 
     #if INIT_SDCARD
     SDCARD_Init();
     #endif
 
-    #if INIT_LCD5110
+    #if INIT_LCD
+    #if MICROPY_MODULE_LCD5110
     Do_LCD_Init();
     Do_LCD_setFont(1);
     Do_LCD_text(0,0,"Tiva C");
     Do_LCD_setFont(0);
     Do_LCD_text(0,2,"MicroPython");
     Do_LCD_text(0,3,"Ready");
+    mp_printf(&mp_plat_print, "LCD Display initialised.\n");
+    #endif
+    #if MICROPY_MODULE_LCD_ILI9486
+    Do_XPT_Init(INIT_TFT_SPI,INIT_TP_CS);
+    Do_TFT_Init(INIT_TFT_SPI,INIT_TP_CS,INIT_TFT_DC,INIT_TFT_RST);
+    Do_TFT_clear(TFT_BLACK);
+    mp_printf(&mp_plat_print, "TFT Display initialised.\n");
+    #endif
     #endif
 
 }

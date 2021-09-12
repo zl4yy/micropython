@@ -21,12 +21,22 @@
 #include "py/runtime.h"
 #include "py/builtin.h"
 
-#define DISPLAY_LCD5110 (1)    // Enable output to the Nokia 5110 Display
+#define DISPLAY_LCD5110 (0)    // Enable output to the Nokia 5110 Display
+#define DISPLAY_ILI9486 (1)    // Enable output to the ILI 9486/88 TFT Display
 
 #if DISPLAY_LCD5110
 #define MAX_X (84)
 #define MAX_Y (48)
+#define MAXCOLOURS (1)
 #include "modules/lcd5110.h"
+#endif
+
+#if DISPLAY_ILI9486
+#define MAX_X (320)
+#define MAX_Y (480)
+#define ORIENTATION (0)
+#define MAXCOLOURS (0xFFFF)
+#include "modules/lcd_ili9486.h"
 #endif
 
 uint16_t _maxiter = 40;
@@ -51,13 +61,30 @@ const uint8_t symbols[20] ={' ', '.', '`', ',', ':', ';', '|', 'o', '<', '>', '(
 // Print Mandelbrot with Char output
 void Do_Fractals_Print_Mandel(uint8_t output) {
     assert(FLT_EVAL_METHOD == 0);
-    uint16_t num_sym = sizeof(symbols)/sizeof(symbols[0]);
+    uint16_t num_sym = MAXCOLOURS;
     mp_printf(&mp_plat_print, "Start\n");
     float x ,y;
     float u, v, u2, v2; /* Coordinates of the iterated point. */
     uint16_t i,j; /* Pixel counters */
     uint16_t k; /* Iteration counter */
     uint16_t colour;
+
+
+    // For text display, the number of symbol is not the max number of colours
+    if (output==0) {
+        num_sym = sizeof(symbols)/sizeof(symbols[0]);
+    } else {
+    #if DISPLAY_ILI9486
+        Do_TFT_setRotation(ORIENTATION);
+        Do_TFT_clear(TFT_BLACK);
+        Do_TFT_startWrite();
+        Do_TFT_writeCommand(ILI9486_RAMWR);
+        #endif
+        #if DISPLAY_LCD5110
+        Do_LCD_clear(0);
+        #endif
+    }
+
 
     /* Precompute pixel width and height. */
     float dx=(_xmax-_xmin)/(float)_xres;
@@ -86,6 +113,11 @@ void Do_Fractals_Print_Mandel(uint8_t output) {
                 if (colour > 0) Do_LCD_plot(i,j);
                 break;
             #endif
+            #if DISPLAY_ILI9486
+            case 1:
+                Do_TFT_TX_Colours(INIT_TFT_SPI, colour);
+                break;
+            #endif
             case 0:
             default:
                 mp_printf(&mp_plat_print, "%c", symbols[colour]);
@@ -97,12 +129,19 @@ void Do_Fractals_Print_Mandel(uint8_t output) {
         case 1:
             break;
         #endif
+        #if DISPLAY_ILI9486
+        case 1:
+            break;
+        #endif
         case 0:
         default:
             mp_printf(&mp_plat_print, "\n");
             break;
         };
     };
+    #if DISPLAY_ILI9486
+    Do_TFT_endWrite();
+    #endif
 };
 
 
@@ -132,8 +171,6 @@ STATIC mp_obj_t fractals_set_denominators(size_t n_args, const mp_obj_t *args) {
     _ymin = _ymin / (float)_ymin_d;
     _ymax = _ymax / (float)_ymax_d;
 
-    _yres = (uint16_t)(((float)_xres*(_ymax-_ymin))/(_xmax-_xmin));
-
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(fractals_set_denominators_obj, 4, fractals_set_denominators);
@@ -148,7 +185,8 @@ STATIC mp_obj_t fractals_print_mandel(size_t n_args, const mp_obj_t *args) {
         _maxiter = mp_obj_get_int(args[4]);
         _xres = mp_obj_get_int(args[5]);
     } else {
-        mp_printf(&mp_plat_print, "Previous values.\n");
+        mp_printf(&mp_plat_print, "Stored values.\n");
+        if(_xres>100) _xres = 90;
     }
     _yres = (uint16_t)(((float)_xres*(_ymax-_ymin))/(_xmax-_xmin));
     Do_Fractals_Print_Mandel(0);
@@ -156,7 +194,7 @@ STATIC mp_obj_t fractals_print_mandel(size_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(fractals_print_mandel_obj, 0, 6, fractals_print_mandel);
 
-#if DISPLAY_LCD5110
+#if DISPLAY_LCD5110 || DISPLAY_ILI9486
 STATIC mp_obj_t fractals_plot_mandel(size_t n_args, const mp_obj_t *args) {
     if (n_args == 5) {  // If not the right number of arguments then default values
         _xmin = (float)mp_obj_get_int(args[0]) / (float)_xmin_d;
@@ -165,12 +203,11 @@ STATIC mp_obj_t fractals_plot_mandel(size_t n_args, const mp_obj_t *args) {
         _ymax = (float)mp_obj_get_int(args[3]) / (float)_ymax_d;
         _maxiter = mp_obj_get_int(args[4]);
     } else {
-        mp_printf(&mp_plat_print, "Previous values.\n");
+        mp_printf(&mp_plat_print, "Stored values.\n");
     }
     
     _xres = MAX_X;
     _yres = MAX_Y;
-    Do_LCD_clear(0);
     Do_Fractals_Print_Mandel(1);
     return mp_const_none;
 }
@@ -183,7 +220,7 @@ STATIC const mp_rom_map_elem_t fractals_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_info), MP_ROM_PTR(&fractals_info_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_denominators), MP_ROM_PTR(&fractals_set_denominators_obj) },
     { MP_ROM_QSTR(MP_QSTR_print_mandel), MP_ROM_PTR(&fractals_print_mandel_obj) },
-#if DISPLAY_LCD5110
+#if DISPLAY_LCD5110 || DISPLAY_ILI9486
     { MP_ROM_QSTR(MP_QSTR_plot_mandel), MP_ROM_PTR(&fractals_plot_mandel_obj) },
 #endif
 };

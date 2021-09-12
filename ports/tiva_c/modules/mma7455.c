@@ -58,7 +58,6 @@ bool Do_MMA7455_Init(uint8_t port, uint8_t sensitivity) {
   struct val offsets;
 
   // Initialise MCU hardware
-  Do_SysTick_Init();
   Do_I2C_MasterInit(_i2cPort_mma7455, 0);   // Low speed I2C only is supported
   Do_SysTick_Waitms(5);   // Wait for initialisation
   err |= Do_I2C_MasterTX(_i2cPort_mma7455, MMA7455_I2C_ADDRESS, MMA7455_I2CAD);  // Read it back to verify

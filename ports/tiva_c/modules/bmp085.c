@@ -60,7 +60,6 @@ bool Do_BMP085_Init(uint8_t port) {
   uint8_t data[3];
 
   // Initialise MCU hardware
-  Do_SysTick_Init();
   Do_I2C_MasterInit(_i2cPort_bmp085, 0);   // Low speed I2C only is supported
   Do_SysTick_Waitms(5);   // Wait for initialisation
   err |= Do_I2C_MasterTX(_i2cPort_bmp085, SLAVEADDR, 0xd0);  // Chip ID register

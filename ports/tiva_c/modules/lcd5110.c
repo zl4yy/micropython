@@ -109,7 +109,6 @@ void Do_LCD_Init() {
 
   // Initialise MCU hardware
   Do_GPIO_Init();
-  Do_SysTick_Init();
 
   #if HARDWARE_SPI
   Do_SSI_Init(SPIPORT,10041,false); // Using SSI 0 Master, SPI frame format, 4 Mbps, 8 data bits

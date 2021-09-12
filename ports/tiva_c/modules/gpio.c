@@ -39,7 +39,6 @@ void gpio_error_notinitialised () {
 void Do_GPIO_Init() {
 	SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOA | SYSCTL_RCGC2_GPIOB | SYSCTL_RCGC2_GPIOC | SYSCTL_RCGC2_GPIOD | SYSCTL_RCGC2_GPIOE | SYSCTL_RCGC2_GPIOF;
 	GPIO_InitDone = true;
-	Do_SysTick_Init();
 }
 
 // Enable the GPIO pins for the LEDs.  Set the direction as output, and

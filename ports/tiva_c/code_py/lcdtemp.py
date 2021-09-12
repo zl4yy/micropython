@@ -4,7 +4,6 @@ import lcd
 import bmp085
 import gpio
 gpio.init()
-time.init()
 lcd.init()
 gpio.output(gpio.red)
 gpio.input(gpio.sw1)

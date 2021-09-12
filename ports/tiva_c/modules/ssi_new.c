@@ -22,8 +22,7 @@
 #include "boards/hw_memmap.h"
 #include "modules/time.h"
 
-bool SSI_InitDone[4] = {[0]=false,[1]=false,[2]=false,[3]=false};   // Array with port initialisation status
-
+uint16_t _ssicfg[4] = {[0]=0,[1]=0,[2]=0,[3]=0}; // Array with port initialisation and config value
 /*
 
     Internal C functions (For use in other C modules)   
@@ -46,7 +45,7 @@ void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg, bool sdcard) {
     // Default settings
     uint32_t ssiproto = SSI_FRF_MOTO_MODE_0;
     uint32_t ssimode = SSI_MODE_MASTER;
-    uint32_t ssibitrate = 8000000;
+    uint32_t ssibitrate = 2000000;
     uint32_t ssidata = 8;
     uint32_t ssiclock = SSI_CLOCK_PIOSC;
     uint32_t clkvalue = 16000000;
@@ -143,9 +142,6 @@ void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg, bool sdcard) {
         case 2:
             ssidata = 16;
             break;
-        case 3:
-            ssidata = 32;
-            break;
     }
 
     switch (ssinum) {
@@ -179,7 +175,8 @@ void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg, bool sdcard) {
             // Load default configuration parameters
             ROM_SSIDataPut(SSI0_BASE, 0x00);
 
-            SSI_InitDone[ssinum] = true;
+            _ssicfg[ssinum] = ssicfg;
+
             break;
         case 1:
             // enable SSI1 and GPIOD peripherals
@@ -211,7 +208,8 @@ void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg, bool sdcard) {
             // Load default configuration parameters
             ROM_SSIDataPut(SSI1_BASE, 0x00);
 
-            SSI_InitDone[ssinum] = true;
+            _ssicfg[ssinum] = ssicfg;
+
             break;
         case 2:
             // enable SSI2 and GPIOD peripherals
@@ -243,7 +241,8 @@ void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg, bool sdcard) {
             // Load default configuration parameters
             ROM_SSIDataPut(SSI2_BASE, 0x00);
 
-            SSI_InitDone[ssinum] = true;
+            _ssicfg[ssinum] = ssicfg;
+
             break;
         case 3:
             // enable SSI3 and GPIOD peripherals
@@ -276,7 +275,8 @@ void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg, bool sdcard) {
             // Load default configuration parameters
             ROM_SSIDataPut(SSI3_BASE, 0x00);
 
-            SSI_InitDone[ssinum] = true;
+            _ssicfg[ssinum] = ssicfg;
+
             break;
         default:
             ssi_err_portnotavailable();
@@ -284,9 +284,214 @@ void Do_SSI_Init(uint8_t ssinum, uint16_t ssicfg, bool sdcard) {
     }
 }
 
+// Perform fast configuration change without complete reinitisalisation
+uint16_t Do_SSI_FastConfig(uint8_t ssinum, uint16_t ssicfg) {
+    uint16_t oldconfig = 0;
+
+    if (_ssicfg[ssinum]==0) {
+        ssi_err_notinitialised();
+    } else {
+        uint32_t initialData = 0;
+
+        // Default settings
+        uint32_t ssiproto = SSI_FRF_MOTO_MODE_0;
+        uint32_t ssimode = SSI_MODE_MASTER;
+        uint32_t ssibitrate = 2000000;
+        uint32_t ssidata = 8;
+        uint32_t ssiclock = SSI_CLOCK_PIOSC;
+        uint32_t clkvalue = 16000000;
+
+        // Select Clock source
+        switch (ssicfg/10000) {
+            case 1:
+                ssiclock = SSI_CLOCK_PIOSC;
+                clkvalue = 16000000;
+                break;
+            case 2:
+                ssiclock = SSI_CLOCK_SYSTEM;
+                clkvalue = 80000000;
+                break;
+        }
+
+        // Select Master / Slave
+        switch (ssicfg/1000) {
+            case 0:
+                ssimode = SSI_MODE_MASTER;
+                break;
+            case 1:
+                ssimode = SSI_MODE_SLAVE;
+                break;
+            case 2:
+                ssimode = SSI_MODE_SLAVE_OD;
+                break;
+        }
+
+        // Select Frame Format
+        switch (ssicfg/100) {
+            case 0:
+                ssiproto = SSI_FRF_MOTO_MODE_0;
+                break;
+            case 1:
+                ssiproto = SSI_FRF_MOTO_MODE_1;
+                break;
+            case 2:
+                ssiproto = SSI_FRF_MOTO_MODE_2;
+                break;
+            case 3:
+                ssiproto = SSI_FRF_MOTO_MODE_3;
+                break;
+            case 4:
+                ssiproto = SSI_FRF_NMW;
+                break;
+            case 5:
+                ssiproto = SSI_FRF_TI;
+                break;
+        }
+
+        // Select Bitrate
+        switch (ssicfg/10) {
+            case 0:
+                ssibitrate = 250000;
+                break;
+            case 1:
+                ssibitrate = 500000;
+                break;
+            case 2:
+                ssibitrate = 1000000;
+                break;
+            case 3:
+                ssibitrate = 2000000;
+                break;
+            case 4:
+                ssibitrate = 4000000;
+                break;
+            case 5:
+                ssibitrate = 8000000;
+                break;
+            case 6:
+                if (ssiclock==SSI_CLOCK_SYSTEM) ssibitrate = 12000000;
+                break;
+            case 7:
+                if (ssiclock==SSI_CLOCK_SYSTEM) ssibitrate = 16000000;
+                break;
+            case 8:
+                if (ssiclock==SSI_CLOCK_SYSTEM) ssibitrate = 20000000;
+                break;
+            case 9:
+                if (ssiclock==SSI_CLOCK_SYSTEM) ssibitrate = 25000000;
+                break;
+        }
+
+        // Select Data Segment Size (length)
+        switch (ssicfg%10) {
+            case 0:
+                ssidata = 4;
+                break;
+            case 1:
+                ssidata = 8;
+                break;
+            case 2:
+                ssidata = 16;
+                break;
+        }
+
+        switch (ssinum) {
+            case 0:
+                // Disable SSI peripherals
+                ROM_SSIDisable(SSI0_BASE);
+
+                //Configure and enable SSI port
+                // Use internal 16Mhz RC oscillator as SSI clock source
+                ROM_SSIClockSourceSet(SSI0_BASE, ssiclock);
+                ROM_SSIConfigSetExpClk(SSI0_BASE, clkvalue, ssiproto,
+                        ssimode, ssibitrate, ssidata);
+                ROM_SSIEnable(SSI0_BASE);
+
+                //clear out any initial data that might be present in the RX FIFO
+                while(ROM_SSIDataGetNonBlocking(SSI0_BASE, &initialData));
+                
+                // Load default configuration parameters
+                ROM_SSIDataPut(SSI0_BASE, 0x00);
+
+                oldconfig = _ssicfg[ssinum];
+                _ssicfg[ssinum] = ssicfg;
+
+                break;
+            case 1:
+                // Disable SSI peripherals
+                ROM_SSIDisable(SSI1_BASE);
+
+                //Configure and enable SSI port
+                // Use internal 16Mhz RC oscillator as SSI clock source
+                ROM_SSIClockSourceSet(SSI1_BASE, ssiclock);
+                ROM_SSIConfigSetExpClk(SSI1_BASE, clkvalue, ssiproto,
+                        ssimode, ssibitrate, ssidata);
+                ROM_SSIEnable(SSI1_BASE);
+
+                //clear out any initial data that might be present in the RX FIFO
+                while(ROM_SSIDataGetNonBlocking(SSI1_BASE, &initialData));
+
+                // Load default configuration parameters
+                ROM_SSIDataPut(SSI1_BASE, 0x00);
+
+                oldconfig = _ssicfg[ssinum];
+                _ssicfg[ssinum] = ssicfg;
+
+                break;
+            case 2:
+                // Disable SSI peripherals
+                ROM_SSIDisable(SSI2_BASE);
+
+                //Configure and enable SSI port
+                // Use internal 16Mhz RC oscillator as SSI clock source
+                ROM_SSIClockSourceSet(SSI2_BASE, ssiclock);
+                ROM_SSIConfigSetExpClk(SSI2_BASE, clkvalue, ssiproto,
+                        ssimode, ssibitrate, ssidata);
+                ROM_SSIEnable(SSI2_BASE);
+
+                //clear out any initial data that might be present in the RX FIFO
+                while(ROM_SSIDataGetNonBlocking(SSI2_BASE, &initialData));
+
+                // Load default configuration parameters
+                ROM_SSIDataPut(SSI2_BASE, 0x00);
+
+                oldconfig = _ssicfg[ssinum];
+                _ssicfg[ssinum] = ssicfg;
+
+                break;
+            case 3:
+                // Disable SSI peripherals
+                ROM_SSIDisable(SSI3_BASE);
+
+                //Configure and enable SSI port
+                // Use internal 16Mhz RC oscillator as SSI clock source
+                ROM_SSIClockSourceSet(SSI3_BASE, ssiclock);
+                ROM_SSIConfigSetExpClk(SSI3_BASE, clkvalue, ssiproto,
+                        ssimode, ssibitrate, ssidata);
+                ROM_SSIEnable(SSI3_BASE);
+
+                //clear out any initial data that might be present in the RX FIFO
+                while(ROM_SSIDataGetNonBlocking(SSI3_BASE, &initialData));
+
+                // Load default configuration parameters
+                ROM_SSIDataPut(SSI3_BASE, 0x00);
+
+                oldconfig = _ssicfg[ssinum];
+                _ssicfg[ssinum] = ssicfg;
+
+                break;
+            default:
+                ssi_err_portnotavailable();
+                break;
+        }
+    }
+    return oldconfig;
+}
+
+
 // Disable SSI
 void Do_SSI_Disable(uint8_t ssinum) {
-    if (!SSI_InitDone[ssinum]) {
+    if (_ssicfg[ssinum]==0) {
         ssi_err_notinitialised();
     } else {
         switch (ssinum) {
@@ -311,7 +516,7 @@ void Do_SSI_Disable(uint8_t ssinum) {
 
 // Enable SSI
 void Do_SSI_Enable(uint8_t ssinum) {
-    if (!SSI_InitDone[ssinum]) {
+    if (_ssicfg[ssinum]==0) {
         ssi_err_notinitialised();
     } else {
         switch (ssinum) {
@@ -336,7 +541,7 @@ void Do_SSI_Enable(uint8_t ssinum) {
 
 // Send data via SSI 
 void Do_SSI_TX(uint8_t ssinum, uint32_t word) {
-    if (!SSI_InitDone[ssinum]) {
+    if (_ssicfg[ssinum]==0) {
         ssi_err_notinitialised();
     } else {
         switch (ssinum) {
@@ -361,7 +566,7 @@ void Do_SSI_TX(uint8_t ssinum, uint32_t word) {
 
 // Send data via SSI using the FIFO (non blocking)
 void Do_SSI_TX_FIFO(uint8_t ssinum, uint32_t word) {
-    if (!SSI_InitDone[ssinum]) {
+    if (_ssicfg[ssinum]==0) {
         ssi_err_notinitialised();
     } else {
         switch (ssinum) {
@@ -385,41 +590,53 @@ void Do_SSI_TX_FIFO(uint8_t ssinum, uint32_t word) {
 }
 
 // Send 2 words data via SSI using the FIFO (non blocking)
-void Do_SSI_TX16_FIFO(uint8_t ssinum, uint32_t word, bool islsb) {
-    uint8_t lsb = (uint8_t)(word & 0xff);
-    uint8_t msb = (uint8_t)((word>>8) & 0xff);
+void Do_SSI_TX16_FIFO(uint8_t ssinum, uint16_t word, bool islsb) {
+    union {
+            uint16_t val;
+            struct {
+                    uint8_t lsb;    // ARM is little endian
+                    uint8_t msb;
+            };
+    } in;
+    in.val = word & 0xFFFF;
 
-    if(islsb==true) {
+    if(islsb) {
         //LSBFIRST
-        Do_SSI_TX_FIFO(ssinum,lsb);
-        Do_SSI_TX_FIFO(ssinum,msb);
+        Do_SSI_TX_FIFO(ssinum,(uint32_t)in.lsb);
+        Do_SSI_TX_FIFO(ssinum,(uint32_t)in.msb);
     } else {
         //MSBFIRST
-        Do_SSI_TX_FIFO(ssinum,msb);
-        Do_SSI_TX_FIFO(ssinum,lsb);
+        Do_SSI_TX_FIFO(ssinum,(uint32_t)in.msb);
+        Do_SSI_TX_FIFO(ssinum,(uint32_t)in.lsb);
     }
 }
 
 // Send 2 words data via SSI (blocking)
-void Do_SSI_TX16(uint8_t ssinum, uint32_t word, bool islsb) {
-    uint8_t lsb = (uint8_t)(word & 0xff);
-    uint8_t msb = (uint8_t)((word>>8) & 0xff);
+void Do_SSI_TX16(uint8_t ssinum, uint16_t word, bool islsb) {
+    union {
+            uint16_t val;
+            struct {
+                    uint8_t lsb;    // ARM is little endian
+                    uint8_t msb;
+            };
+    } in;
+    in.val = word & 0xFFFF;
 
-    if(islsb==true) {
+    if(islsb) {
         //LSBFIRST
-        Do_SSI_TX(ssinum,lsb);
-        Do_SSI_TX(ssinum,msb);
+        Do_SSI_TX(ssinum,(uint32_t)in.lsb);
+        Do_SSI_TX(ssinum,(uint32_t)in.msb);
     } else {
         //MSBFIRST
-        Do_SSI_TX(ssinum,msb);
-        Do_SSI_TX(ssinum,lsb);
+        Do_SSI_TX(ssinum,(uint32_t)in.msb);
+        Do_SSI_TX(ssinum,(uint32_t)in.lsb);
     }
 }
 
 // Check if SSI port is still sending data
 bool Do_SSI_Busy(uint8_t ssinum) {
     bool value = false;
-    if (!SSI_InitDone[ssinum]) {
+    if (_ssicfg[ssinum]==0) {
         ssi_err_notinitialised();
     } else {
         switch (ssinum) {
@@ -447,7 +664,7 @@ bool Do_SSI_Busy(uint8_t ssinum) {
 uint8_t Do_SSI_RX(uint8_t ssinum, uint32_t *word) {
     uint8_t length = 0;
 
-    if (!SSI_InitDone[ssinum]) {
+    if (_ssicfg[ssinum]==0) {
         ssi_err_portnotavailable();
     } else {
         switch (ssinum) {
@@ -473,7 +690,7 @@ uint8_t Do_SSI_RX(uint8_t ssinum, uint32_t *word) {
 
 // Receive data via SSI 
 void Do_SSI_RX_Blocking(uint8_t ssinum, uint32_t *word) {
-    if (!SSI_InitDone[ssinum]) {
+    if (_ssicfg[ssinum]==0) {
         ssi_err_portnotavailable();
     } else {
         switch (ssinum) {
@@ -494,7 +711,6 @@ void Do_SSI_RX_Blocking(uint8_t ssinum, uint32_t *word) {
             break;
         }
     }
-    //return word;
 }
 
 /*
