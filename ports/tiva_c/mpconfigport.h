@@ -54,17 +54,17 @@
 #define MICROPY_MODULE_LCD_ILI9486  (1)
 #define MICROPY_MODULE_XPT2046      (1)
 #define MICROPY_MODULE_SDCARD       (1)
-#define MICROPY_MODULE_BMP085       (1)
-#define MICROPY_MODULE_MMA7455      (1)
+#define MICROPY_MODULE_BMP085       (0)
+#define MICROPY_MODULE_MMA7455      (0)
 //#define MICROPY_MODULE_DS1307      (1)
 
 // Miscellaneous modules
 #define MICROPY_MODULE_FRACTALS     (1)
 
 // Default behaviour
-#define INIT_SDCARD                 (0)
+#define INIT_SDCARD                 (1)
 #define INIT_SDCARD_SPI_PORT        (0)
-#define INIT_SDCARD_BOOT            (0)
+#define INIT_SDCARD_BOOT            (1)
 #define INIT_LCD                    (1)
 #define INIT_TFT_SPI                (3)
 #define INIT_TFT_CS                 (34)

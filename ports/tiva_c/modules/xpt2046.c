@@ -22,10 +22,12 @@
 #include "modules/ssi.h"
 #include "modules/lcd_ili9486.h"
 
-uint8_t _spiport_xpt2046;
-uint8_t _pinChipSelect_xpt;
+uint8_t _spiport_xpt2046 = 9;
+uint8_t _pinChipSelect_xpt = 99;
 uint8_t _touchrotation=3;
-int16_t _zthreshold=400;
+int16_t _zthreshold=300;
+bool 	_8bit=false;
+
 int16_t _xmincal = 4095, _ymincal = 4095, _xmaxcal = 0, _ymaxcal = 0;
 
 int16_t xraw=0, yraw=0, zraw=0;
@@ -39,12 +41,12 @@ void xpt2046_error_notinitialised () {
 }
 
 void Do_XPT_startWrite() {
+	Do_TFT_endWrite();
 	Do_GPIO_down(_pinChipSelect_xpt);
-	Do_SysTick_Waitus(100);
+	Do_SysTick_Waitus(50);
 }
 
 void Do_XPT_endWrite() {
-	Do_SysTick_Waitus(100);
 	Do_GPIO_up(_pinChipSelect_xpt);
 }
 
@@ -69,14 +71,16 @@ void Do_XPT_Init(uint8_t spiport, uint8_t pinChipSelect) {
 int16_t Do_XPT_transfer(uint16_t command) {
 	uint32_t word;
 	uint8_t msb,lsb;
-	Do_SSI_TX_FIFO(_spiport_xpt2046, (uint32_t)(command>>8)&0xff);
+	Do_SSI_TX(_spiport_xpt2046, (uint32_t)(command>>8)&0xff);
 	Do_SSI_RX(_spiport_xpt2046, &word);
 	msb = (uint8_t)word;
-	Do_SSI_TX_FIFO(_spiport_xpt2046, (uint32_t)(command)&0xff);
+	Do_SSI_TX(_spiport_xpt2046, (uint32_t)(command)&0xff);
 	Do_SSI_RX(_spiport_xpt2046, &word);
 	lsb = (uint8_t)word;
 
-	return (int16_t)(((msb << 8) | lsb) >> 3);
+	word = (uint32_t)((((msb << 8) | lsb) >> 3)&0x0FFF);
+
+	return (int16_t)word;
 }
 
 int16_t Do_XPT_besttwoavg( int16_t x , int16_t y , int16_t z ) {
@@ -109,26 +113,29 @@ int16_t Do_XPT_besttwoavg( int16_t x , int16_t y , int16_t z ) {
 	return (reta);
 }
 
+
 void Do_XPT_update() {
-	int16_t data[6];
+	int16_t data[6], z1, z2, z, x, y;
 
 	Do_XPT_startWrite();
 
 	Do_XPT_transfer(0xB3); // Requesting Z1
-	int16_t z1 = Do_XPT_transfer(0xC3); // Requesting Z2, receiving Z1
-	int16_t z2 = Do_XPT_transfer(0x93); // Requesting X (dummy measure), receiving Z2
-	int16_t z = (4095 - z2) + z1;
-
-	if (z >= _zthreshold) {
-		Do_XPT_transfer(0x93);  // Requesting X
-		data[0] = Do_XPT_transfer(0xD3); // Requesting Y (dummy measure), receiving X
-		data[1] = Do_XPT_transfer(0x93); // X, make 3 x-y measurements
-		data[2] = Do_XPT_transfer(0xD3); // Y
-		data[3] = Do_XPT_transfer(0x93); // X
+	z1 = Do_XPT_transfer(0xC3); // Requesting Z2, receiving Z1
+	z2 = Do_XPT_transfer(0x93); // Requesting X (dummy measure), receiving Z2
+	if (z1>z2) {
+		z = z1 - z2;		// Only z2 seems to return usable values. 0 is when no pressure at all.
+	} else {
+		z = z2 - z1;		// Only z2 seems to return usable values. 0 is when no pressure at all.
 	}
-	else data[0] = data[1] = data[2] = data[3] = 0;	// Compiler warns these values may be used unset on early exit.
+
+	Do_XPT_transfer(0x93);  // Requesting X
+	data[0] = Do_XPT_transfer(0xD3); // Requesting Y (dummy measure), receiving X
+	data[1] = Do_XPT_transfer(0x93); // X, make 3 x-y measurements
+	data[2] = Do_XPT_transfer(0xD3); // Y
+	data[3] = Do_XPT_transfer(0x93); // X
 	data[4] = Do_XPT_transfer(0xD3);	// Last Y touch 
-	data[5] = Do_XPT_transfer(0xD0);	// Dummy read to obtain data and 2 last bits 0 to power down
+	data[5] = Do_XPT_transfer(0xD0);	// Dummy read to obtain data set power down
+	Do_XPT_transfer(0x00);	// Flushing buffer
 
 	Do_XPT_endWrite();
 
@@ -139,14 +146,10 @@ void Do_XPT_update() {
 		return;
 	} else {
 		zraw = z;
-		// Average pair with least distance between each measured x then y
-		//mp_printf(&mp_plat_print, "p=%d,  %d,%d  %d,%d  %d,%d ++ ", zraw, data[0], data[1], data[2], data[3], data[4], data[5]);
 
-		int16_t x = Do_XPT_besttwoavg( data[0], data[2], data[4] );
-		int16_t y = Do_XPT_besttwoavg( data[1], data[3], data[5] );
+		y = Do_XPT_besttwoavg( data[0], data[2], data[4] );
+		x = Do_XPT_besttwoavg( data[1], data[3], data[5] );
 	
-		//mp_printf(&mp_plat_print, "    %d,%d \n", x, y);
-
 		switch (_touchrotation) {
 		  case 0:
 			xraw = 4095 - y;
@@ -174,6 +177,63 @@ void Do_XPT_update() {
 	}
 }
 
+// 8-bit value update does not seem to work properly
+/*
+void Do_XPT_update8bits() {
+	uint32_t word;
+
+	Do_XPT_startWrite();
+
+	Do_SSI_TX(_spiport_xpt2046, 0xB8);
+	Do_SSI_RX(_spiport_xpt2046, &word);
+	Do_SSI_TX(_spiport_xpt2046, 0x00);
+	Do_SSI_RX(_spiport_xpt2046, &word);
+	int16_t z = (int16_t)(word<<1);
+	Do_SSI_TX(_spiport_xpt2046, 0xD8);
+	Do_SSI_RX(_spiport_xpt2046, &word);
+	z |= (int16_t)(word>>7);
+	Do_SSI_TX(_spiport_xpt2046, 0x00);
+	Do_SSI_RX(_spiport_xpt2046, &word);
+	int16_t x = (int16_t)(word<<1);
+	Do_SSI_TX(_spiport_xpt2046, 0x98);
+	Do_SSI_RX(_spiport_xpt2046, &word);
+	x |= (int16_t)(word>>7);
+	Do_SSI_TX(_spiport_xpt2046, 0x00);
+	Do_SSI_RX(_spiport_xpt2046, &word);
+	int16_t y = (int16_t)(word<<1);
+	Do_SSI_TX(_spiport_xpt2046, 0x00);
+	Do_SSI_RX(_spiport_xpt2046, &word);
+	y |= (int16_t)(word>>7);
+
+	Do_XPT_endWrite();
+
+	switch (_touchrotation) {
+		case 0:
+		xraw = 255 - y;
+		yraw = x;
+		break;
+		case 1:
+		xraw = x;
+		yraw = y;
+		break;
+		case 2:
+		xraw = y;
+		yraw = 255 - x;
+		break;
+		default: // 3
+		xraw = 255 - x;
+		yraw = 255 - y;
+	}
+
+	// Auto calibration routine, saving maximu values read
+	if (xraw > _xmaxcal) _xmaxcal = xraw;
+	if (yraw > _ymaxcal) _ymaxcal = yraw;
+
+	if (xraw < _xmincal) _xmincal = xraw;
+	if (yraw < _ymincal) _ymincal = yraw;
+}*/
+
+
 /*
 
     MicroPython Wrappers
@@ -192,13 +252,9 @@ STATIC mp_obj_t xpt_init(mp_obj_t spi_obj, mp_obj_t cs_obj) {
 	uint8_t spiport = mp_obj_get_int(spi_obj);
 	uint8_t pinChipSelect = mp_obj_get_int(cs_obj);
 	Do_XPT_Init(spiport, pinChipSelect);
-	// Do two dummy reads
+
 	_xmaxcal = _ymaxcal = 0;
 	_xmincal = _ymincal = 4095;
-
-	Do_XPT_update();
-	Do_SysTick_Waitms(50);
-	Do_XPT_update();
 
 	return mp_const_none;
 }
@@ -225,13 +281,27 @@ STATIC mp_obj_t xpt_setThreshold(mp_obj_t zt_obj) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(xpt_setThreshold_obj, xpt_setThreshold);
 
+/*
+// Set 8bit precision 
+STATIC mp_obj_t xpt_set8bitprecision(mp_obj_t precision_obj) {
+
+	_8bit =  mp_obj_get_int(precision_obj)%2;
+
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(xpt_set8bitprecision_obj, xpt_set8bitprecision);
+*/
 
 // Print Values
 STATIC mp_obj_t xpt_printRaw(void) {
 	if (!XPT2046_InitDone) {
 		xpt2046_error_notinitialised();
 	} else {
-		Do_XPT_update();
+		if (_8bit) {
+			//Do_XPT_update8bits();
+		} else {
+			Do_XPT_update();
+		}
 		mp_printf(&mp_plat_print, "X=%d Y=%d Z=%d \n", xraw, yraw, zraw);
 	}
 	return mp_const_none;
@@ -244,7 +314,11 @@ STATIC mp_obj_t xpt_getZ(void) {
 	if (!XPT2046_InitDone) {
 		xpt2046_error_notinitialised();
 	} else {
-		Do_XPT_update();
+		if (_8bit) {
+			//Do_XPT_update8bits();
+		} else {
+			Do_XPT_update();
+		}
 	}
 	return mp_obj_new_int(zraw);
 }
@@ -277,6 +351,7 @@ STATIC const mp_rom_map_elem_t xpt2046_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&xpt_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_setThreshold), MP_ROM_PTR(&xpt_setThreshold_obj) },
     { MP_ROM_QSTR(MP_QSTR_setRotation), MP_ROM_PTR(&xpt_setRotation_obj) },
+//    { MP_ROM_QSTR(MP_QSTR_set8bitprecision), MP_ROM_PTR(&xpt_set8bitprecision_obj) },
     { MP_ROM_QSTR(MP_QSTR_printRaw), MP_ROM_PTR(&xpt_printRaw_obj) },
     { MP_ROM_QSTR(MP_QSTR_getZ), MP_ROM_PTR(&xpt_getZ_obj) },
     { MP_ROM_QSTR(MP_QSTR_getX), MP_ROM_PTR(&xpt_getX_obj) },

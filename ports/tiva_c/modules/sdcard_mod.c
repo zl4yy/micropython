@@ -39,15 +39,15 @@ STATIC mp_obj_t sdcard_init(mp_obj_t ssinum_obj) {
 
     Do_SD_SetPins(ssinum);
 
-    // Using SSI 3 Master, SPI frame format, 250 Kbps, 8 data bits
-    // LM4F's SSI support 32 bits frames but the code is currently writen to shift 8 bits at a time
+    // Using SSI Master, SPI frame format, 250 Kbps, 8 data bits
+    // LM4F's SSI support 16-bit frames but the code is currently writen to shift 8 bits at a time
     Do_SSI_Init(ssinum, 10001, true);
 
 	if (Do_SD_initialise()) {
         Do_SD_cs_high();
-        // Using SSI 3 Master, SPI frame format, 8 Mbps, 8 data bits.
+        // Using SSI Master, SPI frame format, 8 Mbps, 8 data bits.
         // 8 Mbps is conservative but should work with all SD cards and is plenty enough for most applications
-        // LM4F's SSI support 32 bits frames but the code is currently writen to shift 8 bits at a time
+        // LM4F's SSI support 16-bit frames but the code is currently writen to shift 8 bits at a time
         // NOTE: Settings must be consistent with Do_SD_initialise in sdcard.c used for high speed reset
         Do_SSI_Init(ssinum, 20051, true);
         Do_SD_tx_SSI();

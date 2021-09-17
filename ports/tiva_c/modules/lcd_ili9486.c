@@ -22,16 +22,16 @@
 
 #include "lcd_ili9486.h"
 #include "modules/ssi.h"
+#include "modules/xpt2046.h"
 
-uint8_t _spiport_tft;
-uint8_t _pinReset_tft;
-uint8_t _pinChipSelect_tft;
-uint8_t _pinDataCommand_tft;
-uint8_t _rotation;
+uint8_t _spiport_tft = 9;
+uint8_t _pinReset_tft = 99;
+uint8_t _pinChipSelect_tft = 99;
+uint8_t _pinDataCommand_tft = 99;
+uint8_t _rotation = 0;
 uint16_t _width, _height;
 
 bool TFT_InitDone = false;
-
 
 void tft_error_notinitialised () {
   // Send generic error
@@ -40,13 +40,13 @@ void tft_error_notinitialised () {
 
 // Set the CS pin low
 void Do_TFT_startWrite() {
+  Do_XPT_endWrite();
   Do_GPIO_down(_pinChipSelect_tft);
-  Do_SysTick_Waitus(5);
+	Do_SysTick_Waitus(5);
 }
 
 // Set the CS pin high
 void Do_TFT_endWrite() {
-  Do_SysTick_Waitus(5);
   Do_GPIO_up(_pinChipSelect_tft);
 }
 
@@ -281,14 +281,13 @@ void Do_TFT_setBrightness(uint8_t brightness) {
     Do_TFT_writeCommand(0x53);
 //    Do_SSI_TX_FIFO(_spiport_tft, 0x0, false);
     Do_SSI_TX16_FIFO(_spiport_tft, brightness, false);
-    Do_TFT_endWrite();
 #else
     Do_TFT_writeCommand(ILI9486_CDBVAL);
     Do_SSI_TX16_FIFO(_spiport_tft, 0x16, false);
     Do_TFT_writeCommand(ILI9486_WDBVAL);
     Do_SSI_TX16_FIFO(_spiport_tft, brightness, false);
-    Do_TFT_endWrite();
 #endif
+    Do_TFT_endWrite();
 }
 
 // Set inverse video

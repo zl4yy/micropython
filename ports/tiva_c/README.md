@@ -44,7 +44,6 @@ Example usage:
 	start = time.ticks_ms() # get value of millisecond counter
 	delta = time.ticks_diff(time.ticks_ms(), start) # compute time difference
 
-
 ## GPIO and onboard LED and switch control
 GPIO pin basic support with aliases for onboard LED and switches.
 Pins are encoded by Port and Pin number. Ex: PC5 is 35 (Port C =3 and pin 5), PA2 is 12, PE7 is 57...
@@ -58,7 +57,6 @@ Example usage:
 
 	gpio.input(gpio.sw1)
 	gpio.read(gpio.sw1)
-
 
 ## LCD 5110 Control (PD8544)
 Interfacing settings (hard or soft SPI, pins) need to be set in the source code. Example usage:
@@ -86,7 +84,6 @@ Font can be lcd.small or lcd.large and lcd.write first's parameter is either lcd
 NOTE: The PD8544 chip must be initialised very shortly after power up or it does not work properly.
 Initialisation at boot time is configurable in mpconfigport.h.
 You may need to start the MCU first and apply power to the LCD only before the lcd.init().
-
 
 ## TFT based on ILI9486/88 (WIP)
 There is a functional but limited support for ILI9486 and ILI9488 based TFT panels. Text or advanced drawing
@@ -118,7 +115,6 @@ The parameters for init are spi port and pin for ChipSelect.
 	xpt2046.getY()
 
 Only getZ and printRaw actually do an updated with the chip. getX and getY only return previously obtained values.
-
 
 ## SSI Support
 Example usage:
@@ -187,8 +183,9 @@ The MMA7455 can be connected via I2C. Similar sensors should be supported but ha
 
 ## Compute and display Mandelbrot set
 Uses the FPU unit of the micro controller to compute and display the Mandelbrot set.
-Currently display only works to the UART (serial) and LCD Nokia 5110. Output settings can be
+Currently display works to the UART (serial), LCD Nokia 5110 and ILI9488 TFT. Output settings can be
 changed in the source code.
+A sample python code with touchscreen is available in the code_py directory.
 Parameters for the tracing functions print_mandel and plot_mandel are:
 	- x start and stop for region (integer only)
 	- y start and stop for region (integer only)
@@ -200,9 +197,9 @@ Parameters for the tracing functions print_mandel and plot_mandel are:
 	fractals.print_mandel(-1,0,0,1,40,100)
 	fractals.plot_mandel(-1,0,0,1,40)
 
-Only integers can be used as inputs for the above functions, but a separate functions can make them
-act as fractions, with the parameters then being the denominators. If calling again the tracing functions,
-this can be used as a "zoom" function:
+Only integers can be used as inputs for the above functions, but a separate function can make them
+act as fractions, with the parameters then being the denominators. Acting on both values can be used
+to trace specific areas of the fractal set or "zoom" into it.
 
 	fractals.print_mandel(-2,1,-1,1,40,100)
 	fractals.set_denominators(2,2,2,2)

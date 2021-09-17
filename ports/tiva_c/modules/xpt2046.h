@@ -19,6 +19,9 @@
 
 #include <stdbool.h>
 
+
+void Do_XPT_endWrite();
+
 void Do_XPT_Init(uint8_t spiport, uint8_t pinChipSelect);
 
 int16_t Do_XPT_transfer(uint16_t command);

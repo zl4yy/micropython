@@ -279,15 +279,15 @@ void SDCARD_Init(void) {
 	Do_SysTick_Waitms(100);
     Do_SD_SetPins(INIT_SDCARD_SPI_PORT);
 
-    // Using SSI 3 Master, SPI frame format, 250 Kbps, 8 data bits
-    // LM4F's SSI support 32 bits frames but the code is currently writen to shift 8 bits at a time
+    // Using SSI Master, SPI frame format, 250 Kbps, 8 data bits
+    // LM4F's SSI support 16-bit frames but the code is currently writen to shift 8 bits at a time
     Do_SSI_Init(INIT_SDCARD_SPI_PORT, 10001, true);
 
 	if (Do_SD_initialise()) {
         Do_SD_cs_high();
-        // Using SSI 3 Master, SPI frame format, 8 Mbps, 8 data bits.
+        // Using SSI Master, SPI frame format, 8 Mbps, 8 data bits.
         // 8 Mbps is conservative but should work with all SD cards and is plenty enough for most applications
-        // LM4F's SSI support 32 bits frames but the code is currently writen to shift 8 bits at a time
+        // LM4F's SSI support 16-bit frames but the code is currently writen to shift 8 bits at a time
         // NOTE: Settings must be consistent with Do_SD_initialise in sdcard.c used for high speed reset
         Do_SSI_Init(INIT_SDCARD_SPI_PORT, 20051, true);
         Do_SD_tx_SSI();
@@ -384,10 +384,6 @@ void lm4f_init(void) {
     //ROM_uDMAControlBaseSet(UDMA_CTLBASE_ADDR_M);
     // To do
 
-    #if INIT_SDCARD
-    SDCARD_Init();
-    #endif
-
     #if INIT_LCD
     #if MICROPY_MODULE_LCD5110
     Do_LCD_Init();
@@ -399,11 +395,18 @@ void lm4f_init(void) {
     mp_printf(&mp_plat_print, "LCD Display initialised.\n");
     #endif
     #if MICROPY_MODULE_LCD_ILI9486
+    Do_SysTick_Waitms(100);
     Do_XPT_Init(INIT_TFT_SPI,INIT_TP_CS);
+    Do_SysTick_Waitms(100);
     Do_TFT_Init(INIT_TFT_SPI,INIT_TP_CS,INIT_TFT_DC,INIT_TFT_RST);
+    Do_SysTick_Waitms(100);
     Do_TFT_clear(TFT_BLACK);
     mp_printf(&mp_plat_print, "TFT Display initialised.\n");
     #endif
+    #endif
+
+    #if INIT_SDCARD
+    SDCARD_Init();
     #endif
 
 }
